@@ -2,7 +2,7 @@ Fork of Review [Hotmouse](https://ankiweb.net/shared/info/1928346827). For more 
 
 # Changelog
 
-## [2.14.0] - 2025-11-01
+## [2.3.0] - 2025-11-01
 
 ### Added
 - User-configurable Overview hotkeys with a new “o_” scope, e.g., `o_wheel_down` for the deck overview screen. (event.py, config.py)
@@ -28,6 +28,3 @@ Fork of Review [Hotmouse](https://ankiweb.net/shared/info/1928346827). For more 
 
 ### Notes
 - No content changes to `web/detect_wheel.js`; it is now injected for Overview in addition to Reviewer. (event.py)
-
-<img width="897" height="674" alt="Screenshot_20251101_165831" src="https://github.com/user-attachments/assets/11963b4a-0eea-4506-9819-19428744abe3" />
-
