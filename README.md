@@ -1,4 +1,4 @@
-Fork of Review [Hotmouse](https://ankiweb.net/shared/info/1928346827). For more info read original description.
+[Fork of Review [Hotmouse](https://ankiweb.net/shared/info/1928346827). For more info read original description.
 
 # Changelog
 
@@ -28,3 +28,4 @@ Fork of Review [Hotmouse](https://ankiweb.net/shared/info/1928346827). For more 
 
 ### Notes
 - No content changes to `web/detect_wheel.js`; it is now injected for Overview in addition to Reviewer. (event.py)
+](https://github.com/athulkrishna2015/Review-Hotmouse-Plus)
