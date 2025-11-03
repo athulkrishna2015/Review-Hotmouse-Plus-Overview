@@ -3,6 +3,7 @@
 [Install via ankiweb](https://ankiweb.net/shared/info/1054369752)
 
 Configurable mouse hotkeys for Anki’s review workflow, now extended to the Overview screen and Congratulations screen with a built‑in deck_browser action to jump to the Decks selector.  
+This add-on pairs well with [Deck Centerer](https://ankiweb.net/shared/info/1520580564) and  [Audiovisual Feedback](https://ankiweb.net/shared/info/231569866).
 
 ## Configuration
 
@@ -13,7 +14,7 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 
 ## Acknowledgments
 
-This project is a fork and extension of the original “[Review Hotmouse](https://ankiweb.net/shared/info/1928346827)” Anki add‑on; full credit for the concept and foundational code goes to the original author(s)
+This project is a fork and extension of the original “[Review Hotmouse](https://github.com/BlueGreenMagick/Review-Hotmouse/)” Anki add‑on; full credit for the concept and foundational code goes to the original author(s)
 
 For more info read original [description](https://ankiweb.net/shared/info/1928346827).
 
