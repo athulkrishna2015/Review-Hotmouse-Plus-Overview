@@ -17,6 +17,11 @@ This project is a fork and extension of the original “[Review Hotmouse](https:
 
 For more info read original [description](https://ankiweb.net/shared/info/1928346827).
 
+## Screenshots
+
+<img width="1010" height="675" alt="Screenshot_20251103_171312" src="https://github.com/user-attachments/assets/f4d02fcd-1cf1-4af2-9192-6168746bdb96" />
+<img width="1010" height="675" alt="Screenshot_20251103_171324" src="https://github.com/user-attachments/assets/6db3f41e-e568-4152-9c51-ba0a65b08d43" />
+
 
 # Changelog
 
