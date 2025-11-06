@@ -26,6 +26,15 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 # Changelog
 
+## [2.5.3] 2025-11-06
+
+- Added threshold_click_ms setting (milliseconds) with a new “Mouse click threshold (1000 is 1 s)” control in the General tab; default 0 ms to disable click debouncing for maximum responsiveness.
+- Introduced a separate click debounce clock (last_click_time) and filtering in on_mouse_press that respects threshold_click_ms to prevent accidental rapid double‑activations when desired.
+- After show_ans, the add‑on now clears both wheel and click cooldowns and briefly forces the scope to Answer so the very next click can immediately rate without waiting, removing the perceived second‑click delay.
+- Backward compatibility: if threshold_click_ms is missing it behaves as 0 ms; the config manager tolerates unknown keys, so existing setups remain stable.
+- Refined General tab copy to use SI phrasing (“1000 is 1 s”) and kept existing wheel behavior; wheel cooldown continues to be cleared after show_ans as before.
+
+
 ## [2.4.3] 2025-11-03
 
 - Added Overview Hotkeys tab with full press/click/wheel mapping support (scope: o_*).
