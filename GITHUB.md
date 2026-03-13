@@ -59,6 +59,26 @@ python make_ankiaddon.py
 ```
 *Note: Local builds will also increment the minor version number.*
 
+
+To create a new release on GitHub with both Chrome and Firefox builds:
+
+
+1.  **Commit and Tag**:
+    ```bash
+    git add .
+    git commit -m "Bump version to v1.x.x"
+    git tag v1.x.x
+    git push origin main --tags
+    ```
+2.  **Build and Upload to Releases**:
+    Use the GitHub CLI (`gh`) to create a release and attach the ZIP files:
+    ```bash
+    gh release create v1.x.x addonname.ankiaddon \
+        --title "Release v1.x.x" \
+        --notes "List your changes here."
+    ```
+
+
 ### 3. Code Standards
 We use **Black** for formatting and **Mypy** for type checking. Please run these before submitting a Pull Request:
 ```shell
