@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING
 from .v1 import v1_compat
 
 if TYPE_CHECKING:
-    # from ..firstrun import Version
-    from typing import Any as Version
+    from ..firstrun import Version
 
 
 def compat(prev_version: "Version") -> None:
