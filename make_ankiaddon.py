@@ -1,5 +1,6 @@
 import os
 import zipfile
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -7,7 +8,24 @@ from pathlib import Path
 ADDON_NAME = "Review_Hotmouse_Plus_Overview"
 ADDON_DIR = "addon"
 
+def bump_version():
+    version_file = Path(f"{ADDON_DIR}/VERSION")
+    if not version_file.exists():
+        return
+
+    current_version = version_file.read_text().strip()
+    try:
+        major, minor = map(int, current_version.split('.'))
+        new_version = f"{major}.{minor + 1}"
+        print(f"Bumping version: {current_version} → {new_version}")
+        subprocess.run(["python", "new_version.py", new_version, ADDON_DIR], check=True)
+    except Exception as e:
+        print(f"Warning: Could not auto-bump version: {e}")
+
 def create_ankiaddon():
+    # Auto-bump version before building
+    bump_version()
+    
     # Get the project root and addon directory
     root_dir = Path.cwd()
     addon_path = root_dir / ADDON_DIR

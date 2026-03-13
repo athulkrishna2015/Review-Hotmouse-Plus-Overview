@@ -36,6 +36,14 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 # Changelog
 
+## [2.7] 2026-03-13
+
+- Added **Support Tab** with scan-friendly QR codes and copyable donation IDs.
+- Added **Tools Menu Entry** for easier access to the configuration window.
+- Added **Double-Click Toggle** on the middle mouse button to quickly enable/disable the addon.
+- Fixed circular import issues causing crashes on Anki startup.
+- Fixed missing `Path` and `simplejson` library errors.
+
 ## [2.6] 2026-02-14
 
 - Added optional support for mouse scrolling in the Reviewer and Overview.
