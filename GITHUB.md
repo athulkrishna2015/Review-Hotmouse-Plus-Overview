@@ -68,7 +68,7 @@ To create a new release on GitHub with both Chrome and Firefox builds:
     git add .
     git commit -m "Bump version to v1.x.x"
     git tag v1.x.x
-    git push origin main --tags
+    git push origin master --tags
     ```
 2.  **Build and Upload to Releases**:
     Use the GitHub CLI (`gh`) to create a release and attach the ZIP files:
