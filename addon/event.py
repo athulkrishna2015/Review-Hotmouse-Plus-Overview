@@ -183,7 +183,6 @@ class HotmouseManager:
         self.enabled = config["default_enabled"]
         self.last_scroll_time = datetime.datetime.now()
         self.last_click_time = datetime.datetime.now()  # NEW: Track last click time
-        self.add_menu()
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -475,6 +474,7 @@ def handle_js_message(
     return handled
 
 def install_event_handlers() -> None:
+    manager.add_menu()
     for target in WEBVIEW_TARGETS():
         add_event_filter(target)
 
