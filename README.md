@@ -3,7 +3,10 @@
 [Install via ankiweb](https://ankiweb.net/shared/info/1054369752)
 
 Configurable mouse hotkeys for Anki’s review workflow, now extended to the Overview screen and Congratulations screen with a built‑in deck_browser action to jump to the Decks selector.  
-This add-on pairs well with [Deck Centerer](https://ankiweb.net/shared/info/1520580564) and  [Audiovisual Feedback](https://ankiweb.net/shared/info/231569866).
+**Pro Tip**: Double-click the middle mouse button (scroll wheel) to quickly enable or disable the add-on at any time.
+
+This add-on pairs well with [Deck Centerer]
+(https://ankiweb.net/shared/info/1520580564) and  [Audiovisual Feedback](https://ankiweb.net/shared/info/231569866).
 
 ## Configuration
 

@@ -1,4 +1,5 @@
 from typing import NamedTuple, Optional, List, Dict, Tuple, Union, Literal
+from pathlib import Path
 
 from aqt import mw
 from aqt.qt import *
@@ -38,8 +39,8 @@ def support_tab(conf_window: ConfigWindow) -> None:
             pixmap = QPixmap(str(qr_path))
             if not pixmap.isNull():
                 label = QLabel()
-                # Scale to scan-friendly size (e.g., 250px)
-                label.setPixmap(pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+                # Scale to scan-friendly size (e.g., 400px)
+                label.setPixmap(pixmap.scaled(400, 400, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
                 label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 group.addWidget(label)
         
@@ -365,6 +366,6 @@ def on_window_open(conf_window: ConfigWindow) -> None:
 conf = ConfigManager()
 conf.use_custom_window()
 conf.on_window_open(on_window_open)
-conf.add_config_tab(support_tab)
 conf.add_config_tab(general_tab)
 conf.add_config_tab(hotkey_tabs)
+conf.add_config_tab(support_tab)

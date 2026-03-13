@@ -328,6 +328,12 @@ class HotmouseManager:
 class HotmouseEventFilter(QObject):
     @no_type_check
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        # Double-click middle button to toggle addon
+        if event.type() == QEvent.Type.MouseButtonDblClick:
+            if isinstance(event, QMouseEvent) and event.button() == Qt.MouseButton.MiddleButton:
+                toggle_on_off()
+                return True
+
         # Single path: let the hotkey system handle both Overview and Review (incl. Congrats)
         if event.type() == QEvent.Type.MouseButtonPress:
             if isinstance(event, QMouseEvent) and manager.on_mouse_press(event):
