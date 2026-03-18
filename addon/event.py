@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Dict, Optional, Tuple, no_type_check
+from typing import Any, Callable, List, Dict, Optional, Tuple, Set, no_type_check
 
 from enum import Enum
 
@@ -183,6 +183,8 @@ class HotmouseManager:
         self.enabled = config["default_enabled"]
         self.last_scroll_time = datetime.datetime.now()
         self.last_click_time = datetime.datetime.now()  # NEW: Track last click time
+        self._suspend_reasons: Set[str] = set()
+        self._suspend_prev_enabled: bool = False
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -197,6 +199,24 @@ class HotmouseManager:
 
     def disable(self) -> None:
         self.enabled = False
+
+    def suspend(self, reason: str) -> None:
+        if reason in self._suspend_reasons:
+            return
+        if not self._suspend_reasons:
+            self._suspend_prev_enabled = self.enabled
+            if self.enabled:
+                self.disable()
+        self._suspend_reasons.add(reason)
+
+    def resume(self, reason: str) -> None:
+        if reason not in self._suspend_reasons:
+            return
+        self._suspend_reasons.remove(reason)
+        if not self._suspend_reasons:
+            if self._suspend_prev_enabled:
+                self.enable()
+            self._suspend_prev_enabled = False
 
     def refresh_shortcuts(self) -> None:
         self.has_wheel_hotkey = any("wheel" in s for s in config["shortcuts"].keys())
@@ -413,6 +433,19 @@ def on_context_menu(
 _OverviewT = getattr(getattr(aqt, "overview", object), "Overview", object)
 _ReviewerT = getattr(getattr(aqt, "reviewer", object), "Reviewer", object)
 
+_EFDRC_EDIT_REASON = "efdr_edit"
+_EFDRC_FOCUS_PREFIX = "EFDRC!focuson#"
+_EFDRC_RELOAD = "EFDRC!reload"
+
+def _handle_external_editing_message(message: str, context: Any) -> None:
+    # "Edit Field During Review (Cloze)" sends these pycmd messages.
+    if not isinstance(context, _ReviewerT):
+        return
+    if message.startswith(_EFDRC_FOCUS_PREFIX):
+        manager.suspend(_EFDRC_EDIT_REASON)
+    elif message == _EFDRC_RELOAD:
+        manager.resume(_EFDRC_EDIT_REASON)
+
 def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
     """Inject wheel detector into Reviewer and Overview webviews."""
     if not isinstance(context, (_ReviewerT, _OverviewT)):
@@ -429,6 +462,7 @@ def handle_js_message(
     handled: Tuple[bool, Any], message: str, context: Any
 ) -> Tuple[bool, Any]:
     """Receive pycmd message from detect_wheel.js and route via shortcuts."""
+    _handle_external_editing_message(message, context)
     addon_key = "ReviewHotmouse#"
     if not message.startswith(addon_key):
         return handled

@@ -7,6 +7,7 @@ Configurable mouse hotkeys for Anki’s review workflow, now extended to the Ove
 
 This add-on pairs well with [Deck Centerer]
 (https://ankiweb.net/shared/info/1520580564) and  [Audiovisual Feedback](https://ankiweb.net/shared/info/231569866).
+It also plays nicely with “Edit Field During Review (Cloze)” by automatically pausing Hotmouse while a field is being edited and restoring it after the edit completes.
 
 ## Configuration
 
@@ -19,6 +20,7 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 - Overview Hotkeys: add/edit `o_*` mappings.
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
+- Edit‑During‑Review: If you use “Edit Field During Review (Cloze)”, Hotmouse temporarily suspends while you edit a field and resumes when the edit finishes.
 
 ## Acknowledgments
 
@@ -35,6 +37,10 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 
 # Changelog
+
+## [2.8.1] 2026-03-18
+
+- Auto-suspend Hotmouse while editing fields with “Edit Field During Review (Cloze)”, then restore it when editing ends.
 
 ## [2.8] 2026-03-13
 
