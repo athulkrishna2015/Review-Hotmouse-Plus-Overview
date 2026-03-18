@@ -79,13 +79,6 @@ To create a new release on GitHub with both Chrome and Firefox builds:
     ```
 
 
-### 3. Code Standards
-We use **Black** for formatting and **Mypy** for type checking. Please run these before submitting a Pull Request:
-```shell
-black .
-mypy .
-```
-
 ---
 
 ## How to Contribute
