@@ -39,6 +39,7 @@ def get_and_remove_v1_shortcuts_from_config() -> Dict[str, str]:
         "wheel_ignore_scrollbar",
         "wheel_only_on_bottom_bar",
         "right_click_global_undo",
+        "right_click_undo_confirmation",
         "tooltip",
         "z_debug",
         "undo_whitelist",

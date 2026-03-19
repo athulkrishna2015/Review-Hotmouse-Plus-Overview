@@ -19,6 +19,7 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
     - **Mouse undo behavior**: Right-click undo prioritizes add-on actions triggered by mouse in the current session.
     - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo for any action. If disabled, it only falls back for whitelisted actions (like "Undo Answer Card" or actions in meta.json).
+    - **Right-click again for global undo**: If enabled, when mouse undo is unavailable, a second right-click within 6 seconds will trigger global undo.
 - Overview Hotkeys: add/edit `o_*` mappings.
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
@@ -42,14 +43,16 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 ## 2026-03-19
 
-- **Simplified Mouse Undo**: Removed the two-step "undo guard" (second-click requirement).
-- **Global Undo Fallback**: When `right_click_global_undo` is enabled, right-click undo falls back *immediately* to global Anki undo.
-- **Undo Whitelisting**: When global undo is disabled, right-click undo now only falls back for whitelisted actions (default: "Undo Answer Card") or actions specified in `meta.json`. This prevents accidentally undoing card edits or other non-review actions.
-- **Custom Whitelist**: Added `undo_whitelist` config key to allow users to add their own allowed global undo actions.
+- **Optional Undo Guard**: Re-introduced the two-step undo confirmation as a toggle: **"Right-click again for global undo"**.
+- **Simplified Mouse Undo**: Unified undo handling to prioritize session history before falling back to global/whitelisted undo.
+- **Global Undo Fallback**: When `right_click_global_undo` is enabled, right-click undo falls back to global Anki undo.
+- **Undo Whitelisting**: When global undo is disabled, right-click undo now only falls back for whitelisted actions (default keywords: "answer", "review", "rating", "card", "score") or actions specified in `meta.json`. This prevents accidentally undoing card edits or other non-review actions.
+- **Smart Tooltips**: Improved notifications to suggest using **Ctrl+Z** for global undo or right-clicking again if the undo guard is enabled.
+- **Custom Whitelist**: Added `undo_whitelist` config key for custom allowed global undo actions.
 - Updated right-click `undo_hotmouse` to prioritize only mouse-triggered add-on actions from the current session.
 - Extended right-click mouse undo chaining for session-triggered actions, including repeated answer-card undos plus non-collection actions like `show_ans`, `study_now`, and `deck_browser`.
 - Unified mouse undo around a single session history stack of undoable actions (collection + navigation).
-- Added intuitive navigation unwind after `study_now`: once card-answer undos are exhausted, mouse undo returns to Overview, then to Deck Selector.
+- Added intuitive navigation unwind after `study_now`: once card-answer undos are exhausted, mouse undo returns to Overview.
 - Improved EFDRC compatibility handling by making suspend/resume detection more resilient across context/message variations.
 - Updated version tooling to use semantic `major.minor.patch` format across `bump.py`, `make_ankiaddon.py`, and `new_version.py`.
 - Fixed `show_ans` to reliably reveal the answer card in review.

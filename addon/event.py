@@ -225,6 +225,7 @@ class HotmouseManager:
         self._mouse_session_actions: Set[str] = set()
         self._mouse_undo_history: List[Dict[str, Any]] = []
         self._mouse_undo_chain_until: Optional[datetime.datetime] = None
+        self._global_undo_armed_until: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -474,6 +475,7 @@ class HotmouseManager:
                     continue
 
                 self._mouse_undo_history.pop()
+                self._clear_global_undo_arm()
                 self._arm_mouse_undo_chain()
                 mw.undo()
                 return True
@@ -482,6 +484,7 @@ class HotmouseManager:
                 state = self._undo_local_history_entry(entry)
                 if state == "done":
                     self._mouse_undo_history.pop()
+                    self._clear_global_undo_arm()
                     self._arm_mouse_undo_chain()
                     return True
                 if state == "stale":
@@ -518,6 +521,17 @@ class HotmouseManager:
             return False
         if datetime.datetime.now() > self._mouse_undo_chain_until:
             self._mouse_undo_chain_until = None
+            return False
+        return True
+
+    def _clear_global_undo_arm(self) -> None:
+        self._global_undo_armed_until = None
+
+    def _is_global_undo_armed(self) -> bool:
+        if self._global_undo_armed_until is None:
+            return False
+        if datetime.datetime.now() > self._global_undo_armed_until:
+            self._global_undo_armed_until = None
             return False
         return True
 
@@ -738,8 +752,20 @@ class HotmouseManager:
                 except Exception:
                     pass
 
+        # Optional: Temporary global undo fallback (two-step)
+        if config.get("right_click_undo_confirmation", False) and self._global_undo_available():
+            if self._is_global_undo_armed():
+                self._clear_global_undo_arm()
+                self._clear_mouse_undo_chain()
+                mw.onUndo()
+                return
+            else:
+                self._global_undo_armed_until = datetime.datetime.now() + datetime.timedelta(seconds=6)
+                tooltip(f"Mouse undo unavailable ({reason}).<br><b>Right-click again</b> for global undo or use <b>Ctrl+Z</b>.")
+                return
+
         # Skip all other actions.
-        tooltip(f"Mouse undo unavailable ({reason}).<br>Use <b>Ctrl+Z</b> for global undo or enable it in addon settings.", html=True)
+        tooltip(f"Mouse undo unavailable ({reason}).<br>Use <b>Ctrl+Z</b> for global undo or enable it in addon settings.")
         self._clear_mouse_undo_chain()
         return
 
@@ -818,6 +844,10 @@ class HotmouseManager:
 
         if config["tooltip"]:
             tooltip(action_str)
+
+        if action_str != "undo_hotmouse":
+            self._clear_global_undo_arm()
+            self._clear_mouse_undo_chain()
 
         prev_state = getattr(mw, "state", None)
         prev_enabled = self.enabled
