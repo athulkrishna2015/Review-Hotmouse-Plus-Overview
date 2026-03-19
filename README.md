@@ -38,16 +38,16 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 # Changelog
 
-## [2.8.1] 2026-03-18
+## 2026-03-18
 
 - Auto-suspend Hotmouse while editing fields with [“Edit Field During Review (Cloze)](https://ankiweb.net/shared/info/385888438)”, then restore it when editing ends.
 
-## [2.8] 2026-03-13
+## 2026-03-13
 
 - Automated the **Build and Release** process for faster updates.
 - Updated internal **Compatibility Layer** and version tracking.
 
-## [2.7] 2026-03-13
+## 2026-03-13
 
 - Added **Support Tab** with scan-friendly QR codes and copyable donation IDs.
 - Added **Tools Menu Entry** for easier access to the configuration window.
@@ -55,14 +55,14 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 - Fixed circular import issues causing crashes on Anki startup.
 - Fixed missing `Path` and `simplejson` library errors.
 
-## [2.6] 2026-02-14
+## 2026-02-14
 
 - Added optional support for mouse scrolling in the Reviewer and Overview.
 - New setting: **Ignore wheel on side scroll bar** allows normal scrolling when the pointer is over the scrollbar area.
 - New setting: **Wheel hotkeys only on bottom bar** restricts hotmouse actions to the bottom rating bar, allowing normal scrolling in the main card area.
 - Updated `detect_wheel.js` to intelligently detect mouse position and element context.
 
-## [2.5.3] 2025-11-06
+## 2025-11-06
 
 - Added threshold_click_ms setting (milliseconds) with a new “Mouse click threshold (1000 is 1 s)” control in the General tab; default 0 ms to disable click debouncing for maximum responsiveness.
 - Introduced a separate click debounce clock (last_click_time) and filtering in on_mouse_press that respects threshold_click_ms to prevent accidental rapid double‑activations when desired.
@@ -71,7 +71,7 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 - Refined General tab copy to use SI phrasing (“1000 is 1 s”) and kept existing wheel behavior; wheel cooldown continues to be cleared after show_ans as before.
 
 
-## [2.4.3] 2025-11-03
+## 2025-11-03
 
 - Added Overview Hotkeys tab with full press/click/wheel mapping support (scope: o_*).
 - Added Congratulations Hotkeys tab with full press/click/wheel mapping support (scope: c_*).
@@ -83,7 +83,7 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 - Shipped defaults include `o_click_right → deck_browser` and `c_click_right → deck_browser`.  
 
-## [2.3.0] - 2025-11-01
+## 2025-11-01
 
 ### Added
 - User-configurable Overview hotkeys with a new “o_” scope, e.g., `o_wheel_down` for the deck overview screen. (event.py, config.py)

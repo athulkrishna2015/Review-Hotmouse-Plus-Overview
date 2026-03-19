@@ -35,12 +35,12 @@ The fastest way to test changes is to symlink the `addon/` folder into your Anki
 
 **Linux:**
 ```shell
-ln -s "$(pwd)/addon" ~/.local/share/Anki2/addons21/review_hotmouse_dev
+ln -s "$(pwd)/addon" ~/.local/share/Anki2/addons21/review_hotmouse_plus_overview_dev
 ```
 
 **Windows (Admin PowerShell):**
 ```powershell
-New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Anki2\addons21\review_hotmouse_dev" -Target "$pwd\addon"
+New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Anki2\addons21\review_hotmouse_plus_overview_dev" -Target "$pwd\addon"
 ```
 
 ### 2. Building and Releasing

@@ -119,6 +119,7 @@ ACTIONS: Dict[str, Callable[[], None]] = {
     "off": turn_off,
     "on_off": toggle_on_off,
     "undo": lambda: mw.onUndo() if mw.form.actionUndo.isEnabled() else None,
+    "undo_hotmouse": lambda: manager.undo_last_hotmouse_action(),
     "show_ans": lambda: mw.reviewer._getTypedAnswer(),
     "again": answer_again,
     "hard": answer_hard,
@@ -141,6 +142,23 @@ ACTIONS: Dict[str, Callable[[], None]] = {
     "study_now": _study_now_from_overview,
     # New: go to Deck Browser (for o_* and c_* mappings)
     "deck_browser": _go_deck_browser,
+}
+
+_HOTMOUSE_UNDO_TRACKED_ACTIONS: Set[str] = {
+    "again",
+    "hard",
+    "good",
+    "easy",
+    "delete",
+    "suspend_card",
+    "suspend_note",
+    "bury_card",
+    "bury_note",
+    "mark",
+    "red",
+    "orange",
+    "green",
+    "blue",
 }
 
 ACTION_OPTS = list(ACTIONS.keys())
@@ -185,6 +203,9 @@ class HotmouseManager:
         self.last_click_time = datetime.datetime.now()  # NEW: Track last click time
         self._suspend_reasons: Set[str] = set()
         self._suspend_prev_enabled: bool = False
+        self._hotmouse_undo_text: Optional[str] = None
+        self._track_hotmouse_undo_next: bool = False
+        self._track_hotmouse_undo_set_at: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -221,6 +242,49 @@ class HotmouseManager:
     def refresh_shortcuts(self) -> None:
         self.has_wheel_hotkey = any("wheel" in s for s in config["shortcuts"].keys())
         print("has wheel", self.has_wheel_hotkey)
+
+    def mark_next_undo_as_hotmouse(self, action_str: str) -> None:
+        if action_str in _HOTMOUSE_UNDO_TRACKED_ACTIONS:
+            self._track_hotmouse_undo_next = True
+            self._track_hotmouse_undo_set_at = datetime.datetime.now()
+
+    def on_undo_state_did_change(self, info: Any) -> None:
+        undo_text = getattr(info, "undo_text", None)
+        can_undo = bool(getattr(info, "can_undo", False))
+
+        if self._track_hotmouse_undo_next:
+            self._track_hotmouse_undo_next = False
+            age_ok = False
+            if self._track_hotmouse_undo_set_at is not None:
+                age = datetime.datetime.now() - self._track_hotmouse_undo_set_at
+                age_ok = age.total_seconds() <= 5
+            self._track_hotmouse_undo_set_at = None
+            if age_ok and can_undo and isinstance(undo_text, str):
+                self._hotmouse_undo_text = undo_text
+            else:
+                self._hotmouse_undo_text = None
+            return
+
+        # If the undo head changes due to non-hotmouse actions, drop the token.
+        if self._hotmouse_undo_text and (
+            not can_undo or undo_text != self._hotmouse_undo_text
+        ):
+            self._hotmouse_undo_text = None
+
+    def undo_last_hotmouse_action(self) -> None:
+        tracked_undo_text = self._hotmouse_undo_text
+        if not tracked_undo_text:
+            return
+
+        info = mw.undo_actions_info()
+        can_undo = bool(getattr(info, "can_undo", False))
+        undo_text = getattr(info, "undo_text", None)
+        if not can_undo or undo_text != tracked_undo_text:
+            self._hotmouse_undo_text = None
+            return
+
+        self._hotmouse_undo_text = None
+        mw.undo()
 
     def uses_btn(self, btn: Button) -> bool:
         return any(btn.name in s for s in config["shortcuts"].keys())
@@ -271,6 +335,9 @@ class HotmouseManager:
             tooltip(hotkey_str)
 
         action_str = config["shortcuts"].get(hotkey_str, "")
+        if action_str == "undo" and hotkey_str in ("q_click_right", "a_click_right"):
+            # Backward-compatible behavior: right-click undo is scoped to hotmouse actions.
+            action_str = "undo_hotmouse"
 
         if not self.enabled and action_str not in ("on", "on_off"):
             return False
@@ -281,6 +348,7 @@ class HotmouseManager:
         if config["tooltip"]:
             tooltip(action_str)
 
+        self.mark_next_undo_as_hotmouse(action_str)
         ACTIONS[action_str]()  # run action
 
         # Let rating happen immediately after showing the answer
@@ -549,3 +617,5 @@ gui_hooks.webview_will_show_context_menu.append(
 )
 gui_hooks.webview_will_set_content.append(inject_web_content)
 gui_hooks.webview_did_receive_js_message.append(handle_js_message)
+if hasattr(gui_hooks, "undo_state_did_change"):
+    gui_hooks.undo_state_did_change.append(manager.on_undo_state_did_change)

@@ -1,12 +1,25 @@
 import os
 import zipfile
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
 # Configuration
 ADDON_NAME = "Review_Hotmouse_Plus_Overview"
 ADDON_DIR = "addon"
+
+
+def parse_version(version_string: str) -> tuple[int, int, int]:
+    parts = version_string.strip().split(".")
+    if len(parts) == 2:
+        major, minor = map(int, parts)
+        return major, minor, 0
+    if len(parts) == 3:
+        major, minor, patch = map(int, parts)
+        return major, minor, patch
+    raise ValueError(version_string)
+
 
 def bump_version():
     version_file = Path(f"{ADDON_DIR}/VERSION")
@@ -15,10 +28,10 @@ def bump_version():
 
     current_version = version_file.read_text().strip()
     try:
-        major, minor = map(int, current_version.split('.'))
-        new_version = f"{major}.{minor + 1}"
+        major, minor, patch = parse_version(current_version)
+        new_version = f"{major}.{minor}.{patch + 1}"
         print(f"Bumping version: {current_version} → {new_version}")
-        subprocess.run(["python", "new_version.py", new_version, ADDON_DIR], check=True)
+        subprocess.run([sys.executable, "new_version.py", new_version, ADDON_DIR], check=True)
     except Exception as e:
         print(f"Warning: Could not auto-bump version: {e}")
 
