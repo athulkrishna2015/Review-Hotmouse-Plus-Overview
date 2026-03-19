@@ -33,9 +33,15 @@ def get_and_remove_v1_shortcuts_from_config() -> Dict[str, str]:
     shortcuts = {}
     config_keys = [
         "threshold_wheel_ms",
+        "threshold_click_ms",
         "threshold_angle",
+        "default_enabled",
+        "wheel_ignore_scrollbar",
+        "wheel_only_on_bottom_bar",
+        "right_click_global_undo",
         "tooltip",
         "z_debug",
+        "undo_whitelist",
         "version",
         "shortcuts",
     ]

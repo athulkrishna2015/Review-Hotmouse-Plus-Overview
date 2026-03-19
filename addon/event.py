@@ -5,7 +5,7 @@ from enum import Enum
 import datetime
 
 import json
-
+from pathlib import Path
 from anki.hooks import wrap
 
 from aqt import mw, gui_hooks
@@ -225,7 +225,6 @@ class HotmouseManager:
         self._mouse_session_actions: Set[str] = set()
         self._mouse_undo_history: List[Dict[str, Any]] = []
         self._mouse_undo_chain_until: Optional[datetime.datetime] = None
-        self._global_undo_armed_until: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -475,7 +474,6 @@ class HotmouseManager:
                     continue
 
                 self._mouse_undo_history.pop()
-                self._clear_global_undo_arm()
                 self._arm_mouse_undo_chain()
                 mw.undo()
                 return True
@@ -484,7 +482,6 @@ class HotmouseManager:
                 state = self._undo_local_history_entry(entry)
                 if state == "done":
                     self._mouse_undo_history.pop()
-                    self._clear_global_undo_arm()
                     self._arm_mouse_undo_chain()
                     return True
                 if state == "stale":
@@ -508,18 +505,6 @@ class HotmouseManager:
             return undo_text.strip()
         return "undo entry is not from this add-on"
 
-    def _second_undo_window_seconds(self) -> float:
-        raw = config.get("right_click_second_undo_window_s", 6)
-        try:
-            value = float(raw)
-        except (TypeError, ValueError):
-            return 6.0
-        # Keep it in a practical range.
-        return max(1.0, min(60.0, value))
-
-    def _clear_global_undo_arm(self) -> None:
-        self._global_undo_armed_until = None
-
     def _arm_mouse_undo_chain(self) -> None:
         self._mouse_undo_chain_until = datetime.datetime.now() + datetime.timedelta(
             seconds=10
@@ -536,13 +521,54 @@ class HotmouseManager:
             return False
         return True
 
-    def _is_global_undo_armed(self) -> bool:
-        if self._global_undo_armed_until is None:
+    def _is_action_allowed_globally(self, undo_text: str) -> bool:
+        if not undo_text:
             return False
-        if datetime.datetime.now() > self._global_undo_armed_until:
-            self._global_undo_armed_until = None
+        
+        target = undo_text.strip().lower()
+        
+        # 1. Always allow standard review-related actions by keyword
+        # This ensures "Undo Answer Card" and similar work reliably even in different locales
+        # or if the user answered via keyboard.
+        if any(kw in target for kw in ("answer", "review", "rating", "card", "score")):
+            return True
+        
+        # 2. Check config whitelist (merged with meta.json by Anki)
+        whitelist = config.get("undo_whitelist", [])
+        if not isinstance(whitelist, list):
+            whitelist = []
+            
+        def is_in_list(target_str: str, items: List[Any]) -> bool:
+            for item in items:
+                if not isinstance(item, str):
+                    continue
+                normalized_item = item.strip().lower()
+                # Match exactly, or as a substring either way
+                if normalized_item == target_str or normalized_item in target_str or target_str in normalized_item:
+                    return True
             return False
-        return True
+
+        if is_in_list(target, whitelist):
+            return True
+            
+        # 3. Check meta.json directly for any custom top-level allowed actions
+        try:
+            addon_path = Path(__file__).parent
+            meta_path = addon_path / "meta.json"
+            if meta_path.exists():
+                with open(meta_path, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                    for container in (meta, meta.get("config", {})):
+                        if not isinstance(container, dict):
+                            continue
+                        for key in ("undo_whitelist", "allowed_undo_actions", "undo_actions"):
+                            val = container.get(key)
+                            if isinstance(val, list) and is_in_list(target, val):
+                                return True
+        except Exception:
+            pass
+            
+        return False
 
     def mark_next_undo_as_hotmouse(self, action_str: str) -> None:
         if action_str in _HOTMOUSE_UNDO_TRACK_SKIP_ACTIONS:
@@ -676,7 +702,25 @@ class HotmouseManager:
         if self._undo_from_mouse_history(info, current_step):
             return
 
+        # If global undo is enabled, fallback to mw.onUndo() without restrictions.
+        if config.get("right_click_global_undo", False):
+            if self._global_undo_available():
+                self._clear_mouse_undo_chain()
+                mw.onUndo()
+                return
+            else:
+                tooltip("No global undo entry available.")
+                return
+
+        # Addon-only undo mode: restrict global fallback to whitelisted actions only.
         reason = self._mouse_undo_unavailable_reason()
+        undo_text = getattr(info, "undo_text", "")
+        if self._is_action_allowed_globally(undo_text):
+            if self._global_undo_available():
+                self._clear_mouse_undo_chain()
+                mw.onUndo()
+                return
+
         # Chain-specific safeguard: at the deck boundary, prefer going back to
         # Overview instead of triggering global "Set Deck" undo.
         if (
@@ -689,40 +733,15 @@ class HotmouseManager:
             if "set deck" in lowered or reason == "no undo entry available":
                 try:
                     mw.moveToState("overview")  # type: ignore[arg-type]
-                    self._clear_global_undo_arm()
                     self._clear_mouse_undo_chain()
                     return
                 except Exception:
                     pass
 
-        if not self._global_undo_available():
-            tooltip(f"Mouse undo unavailable ({reason}).")
-            self._clear_global_undo_arm()
-            self._clear_mouse_undo_chain()
-            return
-
-        # Optional immediate fallback: allow right-click undo to call global undo.
-        if config.get("right_click_global_undo", False):
-            self._clear_global_undo_arm()
-            self._clear_mouse_undo_chain()
-            mw.onUndo()
-            return
-
-        # Two-step safety fallback when global fallback is disabled:
-        # first click arms global undo with a notice, second click performs it.
-        if self._is_global_undo_armed():
-            self._clear_global_undo_arm()
-            self._clear_mouse_undo_chain()
-            mw.onUndo()
-            return
-
-        arm_seconds = self._second_undo_window_seconds()
-        self._global_undo_armed_until = datetime.datetime.now() + datetime.timedelta(
-            seconds=arm_seconds
-        )
-        tooltip(
-            f"Mouse undo unavailable ({reason}). Right-click again to run global undo."
-        )
+        # Skip all other actions.
+        tooltip(f"Mouse undo unavailable ({reason}).<br>Use <b>Ctrl+Z</b> for global undo or enable it in addon settings.", html=True)
+        self._clear_mouse_undo_chain()
+        return
 
     def right_click_bound_in_current_scope(self) -> bool:
         if not self.enabled:
@@ -799,10 +818,6 @@ class HotmouseManager:
 
         if config["tooltip"]:
             tooltip(action_str)
-
-        if action_str != "undo_hotmouse":
-            self._clear_global_undo_arm()
-            self._clear_mouse_undo_chain()
 
         prev_state = getattr(mw, "state", None)
         prev_enabled = self.enabled

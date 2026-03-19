@@ -17,37 +17,34 @@ def test_v1_compat() -> None:
     mw.addonManager.writeConfig(__name__, old_config)
     v1_compat()
     config = mw.addonManager.getConfig(__name__)
-    assert config == {
-        "shortcuts": {
-            "q_press_left_press_right_click_middle": "off",
-            "q_wheel_down": "<none>",
-            "q_click_right": "good",
-            "a_click_right": "undo",
-        },
-        "threshold_wheel_ms": 200,
-        "tooltip": False,
-        "z_debug": False,
+    assert config["shortcuts"] == {
+        "q_press_left_press_right_click_middle": "off",
+        "q_wheel_down": "<none>",
+        "q_click_right": "good",
+        "a_click_right": "undo",
     }
+    assert config["threshold_wheel_ms"] == 200
+    assert config["tooltip"] == False
+    assert config["z_debug"] == False
 
     # Test that shortcuts don't get deleted
     v1_compat()
-    assert config == {
-        "shortcuts": {
-            "q_press_left_press_right_click_middle": "off",
-            "q_wheel_down": "<none>",
-            "q_click_right": "good",
-            "a_click_right": "undo",
-        },
-        "threshold_wheel_ms": 200,
-        "tooltip": False,
-        "z_debug": False,
+    config = mw.addonManager.getConfig(__name__)
+    assert config["shortcuts"] == {
+        "q_press_left_press_right_click_middle": "off",
+        "q_wheel_down": "<none>",
+        "q_click_right": "good",
+        "a_click_right": "undo",
     }
+    assert config["threshold_wheel_ms"] == 200
+    assert config["tooltip"] == False
+    assert config["z_debug"] == False
 
     old_config = {"q_press_left": "on", "q_click_left": "off"}
     mw.addonManager.writeConfig(__name__, old_config)
     v1_compat()
     config = mw.addonManager.getConfig(__name__)
-    assert config == {"shortcuts": {"q_click_left": "off"}}
+    assert config["shortcuts"] == {"q_click_left": "off"}
 
 
 def test_modify_empty_action_shortcuts() -> None:

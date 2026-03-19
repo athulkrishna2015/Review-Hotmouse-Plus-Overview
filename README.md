@@ -17,9 +17,8 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Mouse click threshold**: Delay between subsequent clicks (0 for instant).
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
-    - **Mouse undo behavior**: Right-click undo prioritizes add-on actions triggered by mouse in the current session. If unavailable, it shows the reason (for example, `Undo Edit`) and asks you to right-click again for global undo.
-    - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo when no add-on action-specific undo is available (default: off).
-    - **Right-click second undo timer (seconds)**: How long the second right-click can trigger global undo after the notification appears.
+    - **Mouse undo behavior**: Right-click undo prioritizes add-on actions triggered by mouse in the current session.
+    - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo for any action. If disabled, it only falls back for whitelisted actions (like "Undo Answer Card" or actions in meta.json).
 - Overview Hotkeys: add/edit `o_*` mappings.
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
@@ -43,17 +42,18 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 ## 2026-03-19
 
-- Updated right-click `undo_hotmouse` to prioritize only mouse-triggered add-on actions from the current session, avoiding premature global fallback.
+- **Simplified Mouse Undo**: Removed the two-step "undo guard" (second-click requirement).
+- **Global Undo Fallback**: When `right_click_global_undo` is enabled, right-click undo falls back *immediately* to global Anki undo.
+- **Undo Whitelisting**: When global undo is disabled, right-click undo now only falls back for whitelisted actions (default: "Undo Answer Card") or actions specified in `meta.json`. This prevents accidentally undoing card edits or other non-review actions.
+- **Custom Whitelist**: Added `undo_whitelist` config key to allow users to add their own allowed global undo actions.
+- Updated right-click `undo_hotmouse` to prioritize only mouse-triggered add-on actions from the current session.
 - Extended right-click mouse undo chaining for session-triggered actions, including repeated answer-card undos plus non-collection actions like `show_ans`, `study_now`, and `deck_browser`.
-- Unified mouse undo around a single session history stack of undoable actions (collection + navigation), with global undo only as fallback when the top history entry cannot be applied.
+- Unified mouse undo around a single session history stack of undoable actions (collection + navigation).
 - Added intuitive navigation unwind after `study_now`: once card-answer undos are exhausted, mouse undo returns to Overview, then to Deck Selector.
-- Added reason-aware fallback messaging when mouse undo is unavailable (for example `Undo Edit`), with a second-click path to trigger global undo.
-- Added a new General setting: `right_click_global_undo` (default: off). When enabled, right-click undo can fall back to Anki global undo if no add-on-specific undo target is available.
-- Added configurable second-click window for mouse undo fallback with `right_click_second_undo_window_s` (default: 6 seconds).
 - Improved EFDRC compatibility handling by making suspend/resume detection more resilient across context/message variations.
 - Updated version tooling to use semantic `major.minor.patch` format across `bump.py`, `make_ankiaddon.py`, and `new_version.py`.
-- Fixed `show_ans` to reliably reveal the answer card in review (instead of calling a non-display reviewer helper).
-- Added legacy `<none>` action compatibility as a true no-op action, preventing shortcut crashes on older configs/migrations.
+- Fixed `show_ans` to reliably reveal the answer card in review.
+- Added legacy `<none>` action compatibility as a true no-op action.
 - Fixed v1 compatibility hotkey validation so shortcuts ending in `_press` are correctly detected and migrated.
 
 ## 2026-03-18
