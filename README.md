@@ -17,6 +17,8 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Mouse click threshold**: Delay between subsequent clicks (0 for instant).
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
+    - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo when no add-on action-specific undo is available (default: off).
+    - **Right-click second undo timer (seconds)**: How long the second right-click can trigger global undo after the notification appears.
 - Overview Hotkeys: add/edit `o_*` mappings.
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
@@ -37,6 +39,14 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 
 # Changelog
+
+## 2026-03-19
+
+- Expanded right-click `undo_hotmouse` to track and undo all add-on-triggered actions where possible, including rating and non-collection actions like `show_ans`, `study_now`, `deck_browser`, and add-on enable/disable toggles.
+- Added a new General setting: `right_click_global_undo` (default: off). When enabled, right-click undo can fall back to Anki global undo if no add-on-specific undo target is available.
+- Added configurable second-click window for mouse undo fallback with `right_click_second_undo_window_s` (default: 6 seconds).
+- Improved EFDRC compatibility handling by making suspend/resume detection more resilient across context/message variations.
+- Updated version tooling to use semantic `major.minor.patch` format across `bump.py`, `make_ankiaddon.py`, and `new_version.py`.
 
 ## 2026-03-18
 

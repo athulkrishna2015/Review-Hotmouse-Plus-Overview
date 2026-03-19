@@ -96,6 +96,20 @@ def general_tab(conf_window: ConfigWindow) -> None:
         "Only trigger wheel actions when the mouse is over the bottom rating bar.",
     )
 
+    tab.checkbox(
+        "right_click_global_undo",
+        "Right-click undo can use global undo",
+        "If enabled, right-click undo falls back to Anki global undo when no add-on action-specific undo is available.",
+    )
+
+    tab.number_input(
+        "right_click_second_undo_window_s",
+        "Right-click second undo timer (seconds)",
+        tooltip="When mouse undo is unavailable, this is how long a second right-click can trigger global undo.",
+        minimum=1,
+        maximum=60,
+    )
+
     # Removed old right-click checkboxes; use the Overview/Congrats tabs to bind actions.
     tab.checkbox("tooltip", "When triggered, show action name")
     tab.checkbox("z_debug", "Debugging: Show hotkey on mouse action")

@@ -144,21 +144,10 @@ ACTIONS: Dict[str, Callable[[], None]] = {
     "deck_browser": _go_deck_browser,
 }
 
-_HOTMOUSE_UNDO_TRACKED_ACTIONS: Set[str] = {
-    "again",
-    "hard",
-    "good",
-    "easy",
-    "delete",
-    "suspend_card",
-    "suspend_note",
-    "bury_card",
-    "bury_note",
-    "mark",
-    "red",
-    "orange",
-    "green",
-    "blue",
+_HOTMOUSE_UNDO_TRACK_SKIP_ACTIONS: Set[str] = {
+    "",
+    "undo",
+    "undo_hotmouse",
 }
 
 ACTION_OPTS = list(ACTIONS.keys())
@@ -204,8 +193,16 @@ class HotmouseManager:
         self._suspend_reasons: Set[str] = set()
         self._suspend_prev_enabled: bool = False
         self._hotmouse_undo_text: Optional[str] = None
+        self._hotmouse_undo_step: Optional[int] = None
         self._track_hotmouse_undo_next: bool = False
         self._track_hotmouse_undo_set_at: Optional[datetime.datetime] = None
+        self._track_hotmouse_undo_prev_step: Optional[int] = None
+        self._track_hotmouse_undo_token: int = 0
+        self._last_hotmouse_action: Optional[str] = None
+        self._last_hotmouse_action_at: Optional[datetime.datetime] = None
+        self._last_hotmouse_prev_state: Optional[str] = None
+        self._last_hotmouse_prev_enabled: Optional[bool] = None
+        self._global_undo_armed_until: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -243,10 +240,72 @@ class HotmouseManager:
         self.has_wheel_hotkey = any("wheel" in s for s in config["shortcuts"].keys())
         print("has wheel", self.has_wheel_hotkey)
 
+    @staticmethod
+    def _current_undo_step() -> int:
+        col = getattr(mw, "col", None)
+        if not col:
+            return 0
+        try:
+            status = col.undo_status()
+            return int(getattr(status, "last_step", 0))
+        except Exception:
+            return 0
+
+    def _expire_hotmouse_undo_tracking(self, token: int) -> None:
+        if token != self._track_hotmouse_undo_token:
+            return
+        if not self._track_hotmouse_undo_next:
+            return
+        self._track_hotmouse_undo_next = False
+        self._track_hotmouse_undo_set_at = None
+        self._track_hotmouse_undo_prev_step = None
+        self._hotmouse_undo_text = None
+        self._hotmouse_undo_step = None
+
+    def _global_undo_available(self) -> bool:
+        return bool(getattr(mw, "form", None) and mw.form.actionUndo.isEnabled())
+
+    def _second_undo_window_seconds(self) -> float:
+        raw = config.get("right_click_second_undo_window_s", 6)
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            return 6.0
+        # Keep it in a practical range.
+        return max(1.0, min(60.0, value))
+
+    def _clear_global_undo_arm(self) -> None:
+        self._global_undo_armed_until = None
+
+    def _is_global_undo_armed(self) -> bool:
+        if self._global_undo_armed_until is None:
+            return False
+        if datetime.datetime.now() > self._global_undo_armed_until:
+            self._global_undo_armed_until = None
+            return False
+        return True
+
     def mark_next_undo_as_hotmouse(self, action_str: str) -> None:
-        if action_str in _HOTMOUSE_UNDO_TRACKED_ACTIONS:
-            self._track_hotmouse_undo_next = True
-            self._track_hotmouse_undo_set_at = datetime.datetime.now()
+        if action_str in _HOTMOUSE_UNDO_TRACK_SKIP_ACTIONS:
+            return
+        self._track_hotmouse_undo_next = True
+        self._track_hotmouse_undo_set_at = datetime.datetime.now()
+        self._track_hotmouse_undo_prev_step = self._current_undo_step()
+        self._hotmouse_undo_text = None
+        self._hotmouse_undo_step = None
+        self._track_hotmouse_undo_token += 1
+        token = self._track_hotmouse_undo_token
+        QTimer.singleShot(2500, lambda t=token: self._expire_hotmouse_undo_tracking(t))
+
+    def remember_last_hotmouse_action(
+        self, action_str: str, prev_state: Optional[str], prev_enabled: bool
+    ) -> None:
+        if action_str in _HOTMOUSE_UNDO_TRACK_SKIP_ACTIONS:
+            return
+        self._last_hotmouse_action = action_str
+        self._last_hotmouse_action_at = datetime.datetime.now()
+        self._last_hotmouse_prev_state = prev_state
+        self._last_hotmouse_prev_enabled = prev_enabled
 
     def on_undo_state_did_change(self, info: Any) -> None:
         undo_text = getattr(info, "undo_text", None)
@@ -254,37 +313,184 @@ class HotmouseManager:
 
         if self._track_hotmouse_undo_next:
             self._track_hotmouse_undo_next = False
-            age_ok = False
+            previous_step = self._track_hotmouse_undo_prev_step
+            self._track_hotmouse_undo_prev_step = None
+
+            age_ok = True
             if self._track_hotmouse_undo_set_at is not None:
                 age = datetime.datetime.now() - self._track_hotmouse_undo_set_at
-                age_ok = age.total_seconds() <= 5
+                age_ok = age.total_seconds() <= 2.5
             self._track_hotmouse_undo_set_at = None
-            if age_ok and can_undo and isinstance(undo_text, str):
+            current_step = self._current_undo_step()
+            if (
+                age_ok
+                and can_undo
+                and isinstance(undo_text, str)
+                and previous_step is not None
+                and current_step != previous_step
+            ):
                 self._hotmouse_undo_text = undo_text
+                self._hotmouse_undo_step = current_step
             else:
                 self._hotmouse_undo_text = None
+                self._hotmouse_undo_step = None
             return
 
         # If the undo head changes due to non-hotmouse actions, drop the token.
-        if self._hotmouse_undo_text and (
-            not can_undo or undo_text != self._hotmouse_undo_text
-        ):
-            self._hotmouse_undo_text = None
+        if self._hotmouse_undo_step is not None:
+            current_step = self._current_undo_step()
+            if (
+                not can_undo
+                or current_step != self._hotmouse_undo_step
+                or undo_text != self._hotmouse_undo_text
+            ):
+                self._hotmouse_undo_text = None
+                self._hotmouse_undo_step = None
 
     def undo_last_hotmouse_action(self) -> None:
         tracked_undo_text = self._hotmouse_undo_text
-        if not tracked_undo_text:
-            return
-
-        info = mw.undo_actions_info()
-        can_undo = bool(getattr(info, "can_undo", False))
-        undo_text = getattr(info, "undo_text", None)
-        if not can_undo or undo_text != tracked_undo_text:
+        tracked_undo_step = self._hotmouse_undo_step
+        if tracked_undo_text and tracked_undo_step is not None:
+            info = mw.undo_actions_info()
+            can_undo = bool(getattr(info, "can_undo", False))
+            undo_text = getattr(info, "undo_text", None)
+            current_step = self._current_undo_step()
+            if (
+                can_undo
+                and undo_text == tracked_undo_text
+                and current_step == tracked_undo_step
+            ):
+                self._hotmouse_undo_text = None
+                self._hotmouse_undo_step = None
+                self._clear_global_undo_arm()
+                mw.undo()
+                return
             self._hotmouse_undo_text = None
+            self._hotmouse_undo_step = None
+
+        # Some hotmouse actions do not create Anki undo entries; handle the common ones.
+        if self._undo_last_non_collection_hotmouse_action():
+            self._clear_global_undo_arm()
             return
 
-        self._hotmouse_undo_text = None
-        mw.undo()
+        if not self._global_undo_available():
+            self._clear_global_undo_arm()
+            return
+
+        # Optional immediate fallback: allow right-click undo to call global undo.
+        if config.get("right_click_global_undo", False):
+            self._clear_global_undo_arm()
+            mw.onUndo()
+            return
+
+        # Two-step safety fallback when global fallback is disabled:
+        # first click arms global undo with a notice, second click performs it.
+        if self._is_global_undo_armed():
+            self._clear_global_undo_arm()
+            mw.onUndo()
+            return
+
+        arm_seconds = self._second_undo_window_seconds()
+        self._global_undo_armed_until = datetime.datetime.now() + datetime.timedelta(
+            seconds=arm_seconds
+        )
+        tooltip("Mouse undo unavailable here. Right-click again to run global undo.")
+
+    def _undo_last_non_collection_hotmouse_action(self) -> bool:
+        action = self._last_hotmouse_action
+        action_time = self._last_hotmouse_action_at
+        prev_state = self._last_hotmouse_prev_state
+        prev_enabled = self._last_hotmouse_prev_enabled
+        if not action or not action_time:
+            return False
+
+        age = datetime.datetime.now() - action_time
+        if age.total_seconds() > 5:
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            return False
+
+        if action in ("on", "off", "on_off") and prev_enabled is not None:
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            if prev_enabled:
+                self.enable()
+            else:
+                self.disable()
+            return True
+
+        if action == "show_ans":
+            if mw.state == "review" and getattr(mw.reviewer, "state", None) == "answer":
+                self._last_hotmouse_action = None
+                self._last_hotmouse_action_at = None
+                self._last_hotmouse_prev_state = None
+                self._last_hotmouse_prev_enabled = None
+                try:
+                    mw.reviewer._showQuestion()
+                    return True
+                except Exception:
+                    return False
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            return False
+
+        if action == "study_now":
+            if mw.state == "review" and hasattr(mw, "moveToState"):
+                self._last_hotmouse_action = None
+                self._last_hotmouse_action_at = None
+                self._last_hotmouse_prev_state = None
+                self._last_hotmouse_prev_enabled = None
+                try:
+                    mw.moveToState("overview")  # type: ignore[arg-type]
+                    return True
+                except Exception:
+                    return False
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            return False
+
+        if action == "deck_browser" and prev_state and hasattr(mw, "moveToState"):
+            if mw.state == "deckBrowser":
+                self._last_hotmouse_action = None
+                self._last_hotmouse_action_at = None
+                self._last_hotmouse_prev_state = None
+                self._last_hotmouse_prev_enabled = None
+                try:
+                    mw.moveToState(prev_state)  # type: ignore[arg-type]
+                    return True
+                except Exception:
+                    return False
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            return False
+
+        if action in ("audio", "replay_voice", "record_voice"):
+            self._last_hotmouse_action = None
+            self._last_hotmouse_action_at = None
+            self._last_hotmouse_prev_state = None
+            self._last_hotmouse_prev_enabled = None
+            try:
+                from aqt.sound import av_player
+                av_player.clear_queue_and_maybe_interrupt()
+                return True
+            except Exception:
+                return False
+
+        self._last_hotmouse_action = None
+        self._last_hotmouse_action_at = None
+        self._last_hotmouse_prev_state = None
+        self._last_hotmouse_prev_enabled = None
+        return False
 
     def uses_btn(self, btn: Button) -> bool:
         return any(btn.name in s for s in config["shortcuts"].keys())
@@ -348,8 +554,14 @@ class HotmouseManager:
         if config["tooltip"]:
             tooltip(action_str)
 
+        if action_str != "undo_hotmouse":
+            self._clear_global_undo_arm()
+
+        prev_state = getattr(mw, "state", None)
+        prev_enabled = self.enabled
         self.mark_next_undo_as_hotmouse(action_str)
         ACTIONS[action_str]()  # run action
+        self.remember_last_hotmouse_action(action_str, prev_state, prev_enabled)
 
         # Let rating happen immediately after showing the answer
         if action_str == "show_ans":
