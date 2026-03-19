@@ -45,6 +45,8 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 
 - Updated right-click `undo_hotmouse` to prioritize only mouse-triggered add-on actions from the current session, avoiding premature global fallback.
 - Extended right-click mouse undo chaining for session-triggered actions, including repeated answer-card undos plus non-collection actions like `show_ans`, `study_now`, and `deck_browser`.
+- Unified mouse undo around a single session history stack of undoable actions (collection + navigation), with global undo only as fallback when the top history entry cannot be applied.
+- Added intuitive navigation unwind after `study_now`: once card-answer undos are exhausted, mouse undo returns to Overview, then to Deck Selector.
 - Added reason-aware fallback messaging when mouse undo is unavailable (for example `Undo Edit`), with a second-click path to trigger global undo.
 - Added a new General setting: `right_click_global_undo` (default: off). When enabled, right-click undo can fall back to Anki global undo if no add-on-specific undo target is available.
 - Added configurable second-click window for mouse undo fallback with `right_click_second_undo_window_s` (default: 6 seconds).
