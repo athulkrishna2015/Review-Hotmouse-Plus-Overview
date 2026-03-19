@@ -111,7 +111,7 @@ def is_valid_hotkey(hotkey: str) -> bool:
             return False
         elif mode in ("press", "click") and btn not in btn_opts:
             return False
-    if hotkey[-2] == "press":
+    if hotkeylist[-2] == "press":
         return False
     return True
 

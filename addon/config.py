@@ -290,17 +290,19 @@ class HotkeyTabManager:
             layout_tuple = (hlay, alay)
             self.layouts.append(layout_tuple)
 
-            label = QLabel(" ⌫")
-            label.setTextFormat(Qt.TextFormat.RichText)
-            label.setToolTip("Delete this shortcut.")
-            layout.addWidget(label)
+            remove_btn = QPushButton("⌫")
+            remove_btn.setToolTip("Delete this shortcut.")
+            remove_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+            remove_btn.setFlat(True)
+            remove_btn.setFixedWidth(28)
+            layout.addWidget(remove_btn)
 
-            def remove(l: str, layouts: Tuple[DDConfigLayout, DDConfigLayout]) -> None:
+            def remove(layouts: Tuple[DDConfigLayout, DDConfigLayout]) -> None:
                 self.rows_layout.removeWidget(container)
                 container.deleteLater()
                 self.layouts.remove(layouts)
 
-            label.linkActivated.connect(lambda l, t=layout_tuple: remove(l, t))
+            remove_btn.clicked.connect(lambda _, t=layout_tuple: remove(t))
 
     def on_update(self) -> None:
         self.clear_rows()

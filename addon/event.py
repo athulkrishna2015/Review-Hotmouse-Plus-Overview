@@ -78,6 +78,13 @@ def answer_easy() -> None:
         elif cnt == 4:
             mw.reviewer._answerCard(4)
 
+def show_answer() -> None:
+    if mw.state == "review" and getattr(mw.reviewer, "state", None) == "question":
+        try:
+            mw.reviewer._showAnswer()
+        except Exception:
+            pass
+
 def _study_now_from_overview() -> None:
     """Trigger the Overview 'Study Now' action if available."""
     if mw.state != "overview" or not hasattr(mw, "overview") or mw.overview is None:
@@ -115,12 +122,13 @@ def _is_congrats_screen() -> bool:
 
 ACTIONS: Dict[str, Callable[[], None]] = {
     "": lambda: None,
+    "<none>": lambda: None,
     "on": turn_on,
     "off": turn_off,
     "on_off": toggle_on_off,
     "undo": lambda: mw.onUndo() if mw.form.actionUndo.isEnabled() else None,
     "undo_hotmouse": lambda: manager.undo_last_hotmouse_action(),
-    "show_ans": lambda: mw.reviewer._getTypedAnswer(),
+    "show_ans": show_answer,
     "again": answer_again,
     "hard": answer_hard,
     "good": answer_good,
@@ -146,6 +154,7 @@ ACTIONS: Dict[str, Callable[[], None]] = {
 
 _HOTMOUSE_UNDO_TRACK_SKIP_ACTIONS: Set[str] = {
     "",
+    "<none>",
     "undo",
     "undo_hotmouse",
 }
@@ -204,8 +213,6 @@ class HotmouseManager:
         self.last_click_time = datetime.datetime.now()  # NEW: Track last click time
         self._suspend_reasons: Set[str] = set()
         self._suspend_prev_enabled: bool = False
-        self._hotmouse_undo_text: Optional[str] = None
-        self._hotmouse_undo_step: Optional[int] = None
         self._track_hotmouse_undo_next: bool = False
         self._track_hotmouse_action: Optional[str] = None
         self._track_hotmouse_undo_set_at: Optional[datetime.datetime] = None
@@ -216,8 +223,8 @@ class HotmouseManager:
         self._last_hotmouse_prev_state: Optional[str] = None
         self._last_hotmouse_prev_enabled: Optional[bool] = None
         self._mouse_session_actions: Set[str] = set()
-        self._mouse_undo_steps: Dict[int, List[str]] = {}
         self._mouse_undo_history: List[Dict[str, Any]] = []
+        self._mouse_undo_chain_until: Optional[datetime.datetime] = None
         self._global_undo_armed_until: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
@@ -254,7 +261,6 @@ class HotmouseManager:
 
     def refresh_shortcuts(self) -> None:
         self.has_wheel_hotkey = any("wheel" in s for s in config["shortcuts"].keys())
-        print("has wheel", self.has_wheel_hotkey)
 
     @staticmethod
     def _current_undo_step() -> int:
@@ -276,8 +282,6 @@ class HotmouseManager:
         self._track_hotmouse_action = None
         self._track_hotmouse_undo_set_at = None
         self._track_hotmouse_undo_prev_step = None
-        self._hotmouse_undo_text = None
-        self._hotmouse_undo_step = None
 
     def _capture_pending_hotmouse_undo(self, token: int) -> None:
         """Fallback capture path when undo hook is delayed/unavailable."""
@@ -311,10 +315,7 @@ class HotmouseManager:
             self._track_hotmouse_action = None
             self._track_hotmouse_undo_set_at = None
             self._track_hotmouse_undo_prev_step = None
-            self._hotmouse_undo_text = undo_text
-            self._hotmouse_undo_step = current_step
             if tracked_action and tracked_action not in _NON_COLLECTION_HOTMOUSE_UNDO_ACTIONS:
-                self._mouse_undo_steps.setdefault(current_step, []).append(tracked_action)
                 self._append_collection_history_entry(
                     tracked_action, current_step, undo_text
                 )
@@ -329,6 +330,7 @@ class HotmouseManager:
             "kind": "collection",
             "action": action,
             "step": step,
+            "at": datetime.datetime.now(),
         }
         if isinstance(undo_text, str) and undo_text:
             entry["undo_text"] = undo_text
@@ -346,21 +348,31 @@ class HotmouseManager:
             "action": action,
             "prev_state": prev_state,
             "prev_enabled": prev_enabled,
+            "at": datetime.datetime.now(),
         }
         if card_id is not None:
             entry["card_id"] = card_id
         self._mouse_undo_history.append(entry)
 
     def _prune_mouse_undo_history(self, current_step: int) -> None:
+        cutoff = datetime.datetime.now() - datetime.timedelta(minutes=30)
         self._mouse_undo_history = [
             entry
             for entry in self._mouse_undo_history
             if not (
-                entry.get("kind") == "collection"
-                and isinstance(entry.get("step"), int)
-                and int(entry.get("step")) > current_step
+                (
+                    entry.get("kind") == "collection"
+                    and isinstance(entry.get("step"), int)
+                    and int(entry.get("step")) > current_step
+                )
+                or (
+                    isinstance(entry.get("at"), datetime.datetime)
+                    and entry.get("at") < cutoff
+                )
             )
         ]
+        if len(self._mouse_undo_history) > 300:
+            self._mouse_undo_history = self._mouse_undo_history[-300:]
 
     def _undo_local_history_entry(self, entry: Dict[str, Any]) -> str:
         action = entry.get("action")
@@ -464,6 +476,7 @@ class HotmouseManager:
 
                 self._mouse_undo_history.pop()
                 self._clear_global_undo_arm()
+                self._arm_mouse_undo_chain()
                 mw.undo()
                 return True
 
@@ -472,6 +485,7 @@ class HotmouseManager:
                 if state == "done":
                     self._mouse_undo_history.pop()
                     self._clear_global_undo_arm()
+                    self._arm_mouse_undo_chain()
                     return True
                 if state == "stale":
                     self._mouse_undo_history.pop()
@@ -482,29 +496,6 @@ class HotmouseManager:
             self._mouse_undo_history.pop()
 
         return False
-
-    def _prune_mouse_undo_steps(self, current_step: int) -> None:
-        for step in [s for s in self._mouse_undo_steps.keys() if s > current_step]:
-            self._mouse_undo_steps.pop(step, None)
-
-    def _undo_tracked_mouse_step(self, current_step: int) -> None:
-        actions_at_step = self._mouse_undo_steps.get(current_step)
-        if actions_at_step:
-            actions_at_step.pop()
-            if not actions_at_step:
-                self._mouse_undo_steps.pop(current_step, None)
-        else:
-            self._mouse_undo_steps.pop(current_step, None)
-        self._hotmouse_undo_text = None
-        self._hotmouse_undo_step = None
-        self._clear_global_undo_arm()
-        mw.undo()
-
-    @staticmethod
-    def _current_undo_text() -> str:
-        info = mw.undo_actions_info()
-        undo_text = getattr(info, "undo_text", "")
-        return undo_text if isinstance(undo_text, str) else ""
 
     def _mouse_undo_unavailable_reason(self) -> str:
         info = mw.undo_actions_info()
@@ -528,6 +519,22 @@ class HotmouseManager:
 
     def _clear_global_undo_arm(self) -> None:
         self._global_undo_armed_until = None
+
+    def _arm_mouse_undo_chain(self) -> None:
+        self._mouse_undo_chain_until = datetime.datetime.now() + datetime.timedelta(
+            seconds=10
+        )
+
+    def _clear_mouse_undo_chain(self) -> None:
+        self._mouse_undo_chain_until = None
+
+    def _is_mouse_undo_chain_active(self) -> bool:
+        if self._mouse_undo_chain_until is None:
+            return False
+        if datetime.datetime.now() > self._mouse_undo_chain_until:
+            self._mouse_undo_chain_until = None
+            return False
+        return True
 
     def _is_global_undo_armed(self) -> bool:
         if self._global_undo_armed_until is None:
@@ -555,8 +562,6 @@ class HotmouseManager:
         self._track_hotmouse_action = action_str
         self._track_hotmouse_undo_set_at = datetime.datetime.now()
         self._track_hotmouse_undo_prev_step = self._current_undo_step()
-        self._hotmouse_undo_text = None
-        self._hotmouse_undo_step = None
         self._track_hotmouse_undo_token += 1
         token = self._track_hotmouse_undo_token
         # Hook fallback: poll briefly so answer-card undo remains mouse-local.
@@ -594,7 +599,6 @@ class HotmouseManager:
         undo_text = getattr(info, "undo_text", None)
         can_undo = bool(getattr(info, "can_undo", False))
         current_step = self._current_undo_step()
-        self._prune_mouse_undo_steps(current_step)
         self._prune_mouse_undo_history(current_step)
 
         if self._track_hotmouse_undo_next:
@@ -622,27 +626,11 @@ class HotmouseManager:
                     )
                 )
             ):
-                self._hotmouse_undo_text = undo_text
-                self._hotmouse_undo_step = current_step
                 if tracked_action and tracked_action not in _NON_COLLECTION_HOTMOUSE_UNDO_ACTIONS:
-                    self._mouse_undo_steps.setdefault(current_step, []).append(tracked_action)
                     self._append_collection_history_entry(
                         tracked_action, current_step, undo_text
                     )
-            else:
-                self._hotmouse_undo_text = None
-                self._hotmouse_undo_step = None
             return
-
-        # If the undo head changes due to non-hotmouse actions, drop the token.
-        if self._hotmouse_undo_step is not None:
-            if (
-                not can_undo
-                or current_step != self._hotmouse_undo_step
-                or undo_text != self._hotmouse_undo_text
-            ):
-                self._hotmouse_undo_text = None
-                self._hotmouse_undo_step = None
 
     def undo_last_hotmouse_action(self) -> None:
         # Try capture once here as well in case hook/poll timing hasn't landed yet.
@@ -680,9 +668,6 @@ class HotmouseManager:
                 self._track_hotmouse_undo_set_at = None
                 self._track_hotmouse_undo_prev_step = None
                 if last_action and last_action not in _NON_COLLECTION_HOTMOUSE_UNDO_ACTIONS:
-                    self._mouse_undo_steps.setdefault(current_step, []).append(
-                        last_action
-                    )
                     undo_text = getattr(info, "undo_text", None)
                     self._append_collection_history_entry(
                         last_action, current_step, undo_text
@@ -691,15 +676,35 @@ class HotmouseManager:
         if self._undo_from_mouse_history(info, current_step):
             return
 
+        reason = self._mouse_undo_unavailable_reason()
+        # Chain-specific safeguard: at the deck boundary, prefer going back to
+        # Overview instead of triggering global "Set Deck" undo.
+        if (
+            self._is_mouse_undo_chain_active()
+            and mw.state == "review"
+            and getattr(mw.reviewer, "state", None) == "question"
+            and hasattr(mw, "moveToState")
+        ):
+            lowered = reason.lower()
+            if "set deck" in lowered or reason == "no undo entry available":
+                try:
+                    mw.moveToState("overview")  # type: ignore[arg-type]
+                    self._clear_global_undo_arm()
+                    self._clear_mouse_undo_chain()
+                    return
+                except Exception:
+                    pass
+
         if not self._global_undo_available():
-            reason = self._mouse_undo_unavailable_reason()
             tooltip(f"Mouse undo unavailable ({reason}).")
             self._clear_global_undo_arm()
+            self._clear_mouse_undo_chain()
             return
 
         # Optional immediate fallback: allow right-click undo to call global undo.
         if config.get("right_click_global_undo", False):
             self._clear_global_undo_arm()
+            self._clear_mouse_undo_chain()
             mw.onUndo()
             return
 
@@ -707,6 +712,7 @@ class HotmouseManager:
         # first click arms global undo with a notice, second click performs it.
         if self._is_global_undo_armed():
             self._clear_global_undo_arm()
+            self._clear_mouse_undo_chain()
             mw.onUndo()
             return
 
@@ -714,10 +720,23 @@ class HotmouseManager:
         self._global_undo_armed_until = datetime.datetime.now() + datetime.timedelta(
             seconds=arm_seconds
         )
-        reason = self._mouse_undo_unavailable_reason()
         tooltip(
             f"Mouse undo unavailable ({reason}). Right-click again to run global undo."
         )
+
+    def right_click_bound_in_current_scope(self) -> bool:
+        if not self.enabled:
+            return False
+        if mw.state == "overview":
+            return self.uses_btn_in_scope("o", Button.right)
+        if mw.state != "review":
+            return False
+        rstate = getattr(mw.reviewer, "state", None)
+        if rstate == "question":
+            return self.uses_btn_in_scope("q", Button.right)
+        if rstate == "answer":
+            return self.uses_btn_in_scope("a", Button.right)
+        return self.uses_btn_in_scope("c", Button.right)
 
     def uses_btn(self, btn: Button) -> bool:
         return any(btn.name in s for s in config["shortcuts"].keys())
@@ -783,6 +802,7 @@ class HotmouseManager:
 
         if action_str != "undo_hotmouse":
             self._clear_global_undo_arm()
+            self._clear_mouse_undo_chain()
 
         prev_state = getattr(mw, "state", None)
         prev_enabled = self.enabled
@@ -857,16 +877,7 @@ class HotmouseEventFilter(QObject):
 
         # Swallow context menu when right-click is bound in current scope
         if event.type() == QEvent.Type.ContextMenu:
-            # Overview
-            if mw.state == "overview" and manager.uses_btn_in_scope("o", Button.right):
-                return True
-            # Review: question/answer
-            if mw.state == "review" and manager.enabled and manager.uses_btn(Button.right):
-                rstate = getattr(mw.reviewer, "state", None)
-                if rstate in ("question", "answer"):
-                    return True
-            # Congrats as its own scope
-            if _is_congrats_screen() and manager.uses_btn_in_scope("c", Button.right):
+            if manager.right_click_bound_in_current_scope():
                 return True
 
         # Native Qt wheel only used during reviewer; Overview wheel comes via JS
@@ -931,7 +942,7 @@ def on_context_menu(
         return
 
     # When in review and the addon is actively using right-click, swallow menu
-    if manager.enabled and mw.state == "review" and manager.uses_btn(Button.right):
+    if manager.right_click_bound_in_current_scope():
         return None
 
     _old(target, ev)
@@ -994,7 +1005,10 @@ def handle_js_message(
     if not message.startswith(addon_key):
         return handled
 
-    req = json.loads(message[len(addon_key) :])  # type: Dict[str, Any]
+    try:
+        req = json.loads(message[len(addon_key) :])  # type: Dict[str, Any]
+    except ValueError:
+        return handled
 
     if req.get("key") == "wheel":
         # Check if we should ignore this wheel event based on location

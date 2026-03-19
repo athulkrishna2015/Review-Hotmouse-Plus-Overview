@@ -52,6 +52,9 @@ For more info read original [description](https://ankiweb.net/shared/info/192834
 - Added configurable second-click window for mouse undo fallback with `right_click_second_undo_window_s` (default: 6 seconds).
 - Improved EFDRC compatibility handling by making suspend/resume detection more resilient across context/message variations.
 - Updated version tooling to use semantic `major.minor.patch` format across `bump.py`, `make_ankiaddon.py`, and `new_version.py`.
+- Fixed `show_ans` to reliably reveal the answer card in review (instead of calling a non-display reviewer helper).
+- Added legacy `<none>` action compatibility as a true no-op action, preventing shortcut crashes on older configs/migrations.
+- Fixed v1 compatibility hotkey validation so shortcuts ending in `_press` are correctly detected and migrated.
 
 ## 2026-03-18
 
