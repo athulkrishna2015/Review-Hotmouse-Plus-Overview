@@ -8,6 +8,9 @@ from .ankiaddonconfig import *
 
 from .event import ACTION_OPTS, Button, refresh_config
 
+from aqt.utils import qconnect, openLink
+from aqt.webview import AnkiWebView
+
 def copy_to_clipboard(text: str) -> None:
     QApplication.clipboard().setText(text)
     mw.checkpoint("Copied to clipboard")
@@ -28,6 +31,29 @@ def support_tab(conf_window: ConfigWindow) -> None:
         ("BTC", "bc1qrrek3m7sr33qujjrktj949wav6mehdsk057cfx", "BTC.jpg"),
         ("ETH", "0xce6899e4903EcB08bE5Be65E44549fadC3F45D27", "ETH.jpg"),
     ]
+    # Ko-fi Widget (Embedded Script)
+    support_webview = AnkiWebView(conf_window)
+    support_webview.setFixedHeight(40)  # Enough for the widget button if not floating, but here it's floating
+    # For a floating widget, we need the script in a page. 
+    # The widget itself is fixed/absolute positioned by the script.
+    kofi_html = f"""
+    <html>
+    <head>
+    <style>
+      body {{ background-color: transparent; margin: 0; padding: 0; overflow: hidden; }}
+    </style>
+    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+    <script type='text/javascript'>
+      kofiwidget2.init('Support me on Ko-fi', '#72a4f2', 'D1D01W6NQT');
+      kofiwidget2.draw();
+    </script>
+    </head>
+    <body></body>
+    </html>
+    """
+    support_webview.setHtml(kofi_html)
+    scroll.addWidget(support_webview)
+
 
     for name, address, qr_file in support_data:
         group = scroll.vcontainer()
