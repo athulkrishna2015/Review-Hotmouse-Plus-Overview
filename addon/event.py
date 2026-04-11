@@ -199,7 +199,7 @@ class WheelDir(Enum):
         return None, 0
 
     @classmethod
-    def from_web(cls, dx: int, dy: int) -> Tuple[Optional["WheelDir"], int]:
+    def from_web(cls, dx: float, dy: float) -> Tuple[Optional["WheelDir"], float]:
         # Web dy: positive = down, negative = up
         # Web dx: positive = right, negative = left
         if abs(dy) >= abs(dx) and dy != 0:
@@ -231,7 +231,7 @@ class HotmouseManager:
         self._mouse_undo_chain_until: Optional[datetime.datetime] = None
         self._global_undo_armed_until: Optional[datetime.datetime] = None
         # Trackpad Support state
-        self._wheel_accumulator: int = 0
+        self._wheel_accumulator: float = 0.0
         self._last_wheel_dir: Optional[WheelDir] = None
         # Middle-click-drag scroll state
         self._mid_drag_active: bool = False
@@ -904,7 +904,9 @@ class HotmouseManager:
             return False
         return self.handle_scroll(wheel_dir, delta, event.buttons())
 
-    def handle_scroll(self, wheel_dir: WheelDir, delta: int, qbtns: "Qt.MouseButton") -> bool:
+    def handle_scroll(
+        self, wheel_dir: WheelDir, delta: float, qbtns: "Qt.MouseButton"
+    ) -> bool:
         curr_time = datetime.datetime.now()
         time_diff = (curr_time - self.last_scroll_time).total_seconds() * 1000
 
@@ -913,7 +915,7 @@ class HotmouseManager:
             self._wheel_accumulator = 0
 
         self._last_wheel_dir = wheel_dir
-        self._wheel_accumulator += abs(delta)
+        self._wheel_accumulator += abs(float(delta))
 
         # 120 is the standard mouse wheel "click" in Qt. 
         # Trackpads send many small events (1, 2, 5, etc).
@@ -1036,45 +1038,9 @@ class HotmouseEventFilter(QObject):
 
         # Native Qt wheel only used during reviewer; Overview wheel comes via JS
         if mw.state == "review" and event.type() == QEvent.Type.Wheel:
-            if isinstance(event, QWheelEvent):
-                # 1. Scrollbar check
-                if config.get("wheel_ignore_scrollbar", True):
-                    width = 0
-                    if hasattr(obj, "width") and isinstance(obj.width, (int, float)):
-                        width = obj.width
-                    elif hasattr(obj, "width") and callable(obj.width):
-                        width = obj.width()
-                    elif hasattr(obj, "geometry"):
-                        width = obj.geometry().width()
-
-                    if width > 0:
-                        try:
-                            # Qt6
-                            x = event.position().x()
-                        except AttributeError:
-                            # Qt5
-                            x = event.pos().x()
-
-                        if x > width - 30:
-                            return False
-
-                # 2. Bottom bar check (only relevant in review)
-                if config.get("wheel_only_on_bottom_bar", False) and mw.state == "review":
-                    is_bottom = False
-                    curr = obj
-                    while curr:
-                        if curr == mw.bottomWeb:
-                            is_bottom = True
-                            break
-                        try:
-                            curr = curr.parent()
-                        except AttributeError:
-                            break
-                    if not is_bottom:
-                        return False
-
-            if manager.has_wheel_hotkey and manager.on_mouse_scroll(event):  # type: ignore[arg-type]
-                return True
+            # Review and Overview wheel gestures are handled in JS so smart scroll
+            # can inspect the actual page scroll position before triggering a hotkey.
+            return False
 
         if event.type() == QEvent.Type.ChildAdded:
             add_event_filter(event.child())
@@ -1121,6 +1087,12 @@ def _is_reviewer_context(context: Any) -> bool:
 def _is_review_state() -> bool:
     return getattr(mw, "state", None) == "review"
 
+
+def _should_inject_wheel_js(context: Optional[Any]) -> bool:
+    if _is_reviewer_context(context) or _is_overview_context(context):
+        return True
+    return getattr(mw, "state", None) in ("review", "overview")
+
 _EFDRC_EDIT_REASON = "efdr_edit"
 _EFDRC_FOCUS_PREFIX = "EFDRC!focuson#"
 _EFDRC_RELOAD = "EFDRC!reload"
@@ -1140,7 +1112,7 @@ def _handle_external_editing_message(message: str, context: Any) -> None:
 
 def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
     """Inject wheel detector into Reviewer and Overview webviews."""
-    if not (_is_reviewer_context(context) or _is_overview_context(context)):
+    if not _should_inject_wheel_js(context):
         return
     # Inject config values so detect_wheel.js can check them synchronously
     cfg_js = (
@@ -1185,9 +1157,9 @@ def handle_js_message(
         ):
             return (False, None)
 
-        dx = int(req.get("valueX", 0))
+        dx = float(req.get("valueX", 0) or 0)
         # Support legacy "value" key if JS isn't updated for some reason
-        dy = int(req.get("valueY", req.get("value", 0)))
+        dy = float(req.get("valueY", req.get("value", 0)) or 0)
         
         wheel_dir, raw_delta = WheelDir.from_web(dx, dy)
         if wheel_dir is None:

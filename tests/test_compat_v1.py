@@ -81,3 +81,10 @@ def test_modify_hotkeys_ending_with_press() -> None:
         "a_press_left_press_middle_click_right": "hard",
         "a_press_right_click_right": "<none>",
     }
+
+
+def test_is_valid_hotkey_accepts_horizontal_wheel() -> None:
+    from addon.compat.v1 import is_valid_hotkey
+
+    assert is_valid_hotkey("a_wheel_left") is True
+    assert is_valid_hotkey("a_wheel_right") is True

@@ -1,6 +1,10 @@
+if (!window.__reviewHotmouseWheelListenerInstalled) {
+window.__reviewHotmouseWheelListenerInstalled = true;
+
 document.addEventListener("wheel", (ev) => {
+    const target = ev.target instanceof Element ? ev.target : null;
     const isScrollbar = ev.clientX > document.documentElement.clientWidth;
-    const isBottom = window.innerHeight < 150 || !!document.getElementById('checker') || !!document.getElementById('bottombar');
+    const isBottom = window.innerHeight < 150 || !!(target && target.closest("#checker, #bottombar"));
 
     // Allow normal scrolling on the scrollbar area
     if (isScrollbar) return;
@@ -15,7 +19,16 @@ document.addEventListener("wheel", (ev) => {
     // If the mouse is on the bottom bar, bypass this and trigger the hotkey instantly.
     // NOTE: Smart scroll currently only applies to VERTICAL movement.
     if (cfg.smart_scroll && !isBottom) {
-        const scrollElem = document.scrollingElement || document.documentElement;
+        let scrollElem = target;
+        while (scrollElem instanceof Element) {
+            if (scrollElem.scrollHeight > scrollElem.clientHeight + 2) {
+                break;
+            }
+            scrollElem = scrollElem.parentElement;
+        }
+        if (!(scrollElem instanceof Element)) {
+            scrollElem = document.scrollingElement || document.documentElement;
+        }
         
         const scrollHeight = Math.round(scrollElem.scrollHeight);
         const clientHeight = Math.round(scrollElem.clientHeight);
@@ -51,4 +64,5 @@ document.addEventListener("wheel", (ev) => {
         "is_bottom": isBottom
     }
     pycmd("ReviewHotmouse#" + JSON.stringify(req));
-}, { passive: false })
+}, { passive: false });
+}

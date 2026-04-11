@@ -13,3 +13,31 @@ def test_sort_hotkey_btn() -> None:
     h3 = "q_press_right_click_left"
     a3 = h3
     assert HotkeyTabManager.sort_hotkey_btn(h3) == a3
+
+
+def test_trackpad_action_helpers() -> None:
+    from addon.config import apply_trackpad_actions, get_trackpad_action
+
+    shortcuts = {
+        "q_click_right": "undo_hotmouse",
+        "a_wheel_left": "hard",
+        "a_press_middle_wheel_right": "easy",
+    }
+
+    assert get_trackpad_action(shortcuts, "a", "left") == "hard"
+    assert get_trackpad_action(shortcuts, "o", "down") == "<none>"
+
+    updated = apply_trackpad_actions(
+        shortcuts,
+        {
+            ("a", "left"): "again",
+            ("o", "down"): "study_now",
+            ("c", "right"): "<none>",
+        },
+    )
+
+    assert updated["q_click_right"] == "undo_hotmouse"
+    assert updated["a_press_middle_wheel_right"] == "easy"
+    assert updated["a_wheel_left"] == "again"
+    assert updated["o_wheel_down"] == "study_now"
+    assert "c_wheel_right" not in updated

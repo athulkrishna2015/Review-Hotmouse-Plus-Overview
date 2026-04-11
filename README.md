@@ -27,6 +27,7 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Mouse undo behavior**: Right-click undo prioritizes add-on actions triggered by mouse in the current session.
     - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo for any action. If disabled, it only falls back for whitelisted actions (like "Undo Answer Card" or actions in meta.json).
     - **Right-click again for global undo**: If enabled, when mouse undo is unavailable, a second right-click within 6 seconds will trigger global undo.
+- Trackpad Actions: Configure swipe up/down/left/right actions for Question, Answer, Overview, and Congratulations screens.
 - Overview Hotkeys: add/edit `o_*` mappings.
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
@@ -55,6 +56,9 @@ If you find this add-on useful, please consider supporting its development:
 
 ## 2026-04-11
 
+- **Review/Overview smart scroll fix**: Wheel gestures now stay on the webview JS path, so long cards can scroll naturally before Show Answer or rating actions fire.
+- **Trackpad delta fix**: Preserved fractional wheel deltas from the webview so smooth trackpad swipes can accumulate reliably, including left/right gestures.
+- **New Trackpad Actions tab**: Added a dedicated config tab for swipe up/down/left/right actions across Question, Answer, Overview, and Congratulations screens.
 - **Fixed scroll debounce bug**: Continuous scrolling could both show the answer and rate the card in a single scroll gesture. Now requires two separate scroll actions — one to show the answer and another to rate.
 - **Middle-click drag scroll**: Hold the middle mouse button and move up/down to smoothly scroll long cards. Configurable dead zone and sensitivity in the General tab. Enabled by default.
 - **Smart scroll for long cards**: Added an option to let the mouse wheel scroll long cards normally. Wheel hotkeys only trigger when you've reached the end of the content. Enabled by default.

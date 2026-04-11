@@ -40,6 +40,11 @@ def get_and_remove_v1_shortcuts_from_config() -> Dict[str, str]:
         "wheel_only_on_bottom_bar",
         "right_click_global_undo",
         "right_click_undo_confirmation",
+        "middle_click_scroll",
+        "middle_click_dead_zone",
+        "middle_click_sensitivity",
+        "smart_scroll",
+        "scroll_accumulation_threshold",
         "tooltip",
         "z_debug",
         "undo_whitelist",
@@ -103,7 +108,7 @@ def is_valid_hotkey(hotkey: str) -> bool:
     """Returns True if hotkey string is valid."""
     mode_opts = ["press", "click", "wheel"]
     btn_opts = [b.name for b in Button]
-    wheel_opts = ["up", "down"]
+    wheel_opts = ["up", "down", "left", "right"]
 
     hotkeylist = hotkey[2:].split("_")
     if len(hotkeylist) == 0 or len(hotkeylist) % 2 != 0:
