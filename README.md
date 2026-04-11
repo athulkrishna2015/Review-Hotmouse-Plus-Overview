@@ -14,8 +14,9 @@ It also plays nicely with “[Edit Field During Review (Cloze)](https://ankiweb.
 
 Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 - General: Configure thresholds and scrolling behavior.
-    - **Mouse scroll threshold**: Delay between subsequent scroll actions.
-    - **Mouse click threshold**: Delay between subsequent clicks (0 for instant).
+    - **Mouse scroll threshold**: Delay (ms) between subsequent scroll actions.
+    - **Mouse click threshold**: Delay (ms) between subsequent click actions (0 for instant).
+    - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Essential for sensitive trackpads to prevent accidental triggers. 120 is one mouse wheel click.
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
     - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Enabled by default.
@@ -56,6 +57,7 @@ If you find this add-on useful, please consider supporting its development:
 - **Fixed scroll debounce bug**: Continuous scrolling could both show the answer and rate the card in a single scroll gesture. Now requires two separate scroll actions — one to show the answer and another to rate.
 - **Middle-click drag scroll**: Hold the middle mouse button and move up/down to smoothly scroll long cards. Configurable dead zone and sensitivity in the General tab. Enabled by default.
 - **Smart scroll for long cards**: Added an option to let the mouse wheel scroll long cards normally. Wheel hotkeys only trigger when you've reached the end of the content. Enabled by default.
+- **Improved Trackpad Support**: Implemented a scroll accumulator to handle high-resolution trackpad events. Hotkeys now require a deliberate amount of scroll "distance" (configurable) before triggering, preventing accidental actions from tiny gestures.
 
 ## 2026-03-19
 

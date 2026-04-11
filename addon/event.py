@@ -226,6 +226,9 @@ class HotmouseManager:
         self._mouse_undo_history: List[Dict[str, Any]] = []
         self._mouse_undo_chain_until: Optional[datetime.datetime] = None
         self._global_undo_armed_until: Optional[datetime.datetime] = None
+        # Trackpad Support state
+        self._wheel_accumulator: int = 0
+        self._last_wheel_dir: Optional[WheelDir] = None
         # Middle-click-drag scroll state
         self._mid_drag_active: bool = False
         self._mid_drag_origin_y: int = 0
@@ -888,20 +891,39 @@ class HotmouseManager:
         return self.execute_shortcut(hotkey_str)
 
     def on_mouse_scroll(self, event: QWheelEvent) -> bool:
+        delta = event.angleDelta().y()
         wheel_dir = WheelDir.from_qt(event.angleDelta())
         if wheel_dir is None:
             return False
-        return self.handle_scroll(wheel_dir, event.buttons())
+        return self.handle_scroll(wheel_dir, delta, event.buttons())
 
-    def handle_scroll(self, wheel_dir: WheelDir, qbtns: "Qt.MouseButton") -> bool:
+    def handle_scroll(self, wheel_dir: WheelDir, delta: int, qbtns: "Qt.MouseButton") -> bool:
         curr_time = datetime.datetime.now()
-        time_diff = curr_time - self.last_scroll_time
-        self.last_scroll_time = curr_time
+        time_diff = (curr_time - self.last_scroll_time).total_seconds() * 1000
 
-        if time_diff.total_seconds() * 1000 > config["threshold_wheel_ms"]:
-            btns = self.get_pressed_buttons(qbtns)
-            hotkey_str = self.build_hotkey(btns, wheel=wheel_dir)
-            return self.execute_shortcut(hotkey_str)
+        # Reset accumulator if direction changed or enough time passed (0.5s)
+        if wheel_dir != self._last_wheel_dir or time_diff > 500:
+            self._wheel_accumulator = 0
+
+        self._last_wheel_dir = wheel_dir
+        self._wheel_accumulator += abs(delta)
+
+        # 120 is the standard mouse wheel "click" in Qt. 
+        # Trackpads send many small events (1, 2, 5, etc).
+        threshold = config.get("scroll_accumulation_threshold", 120)
+
+        if self._wheel_accumulator >= threshold:
+            if time_diff > config["threshold_wheel_ms"]:
+                self._wheel_accumulator = 0
+                self.last_scroll_time = curr_time
+                btns = self.get_pressed_buttons(qbtns)
+                hotkey_str = self.build_hotkey(btns, wheel=wheel_dir)
+                return self.execute_shortcut(hotkey_str)
+            else:
+                # Accumulator reached but still in time cooldown
+                # Keep accumulator capped so it triggers immediately after cooldown
+                self._wheel_accumulator = threshold
+                return self.enabled
         else:
             return self.enabled
 
@@ -1156,12 +1178,13 @@ def handle_js_message(
         ):
             return (False, None)
 
-        wheel_dir = WheelDir.from_web(int(req.get("value", 0)))
+        raw_delta = int(req.get("value", 0))
+        wheel_dir = WheelDir.from_web(raw_delta)
         if wheel_dir is None:
             return (False, None)
 
         qbtns = mw.app.mouseButtons()
-        executed = manager.handle_scroll(wheel_dir, qbtns)
+        executed = manager.handle_scroll(wheel_dir, raw_delta, qbtns)
 
         # Fallback only if NO overview wheel mapping exists
         if (
