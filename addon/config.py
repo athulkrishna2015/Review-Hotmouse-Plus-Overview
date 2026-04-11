@@ -122,6 +122,12 @@ def general_tab(conf_window: ConfigWindow) -> None:
         "Only trigger wheel actions when the mouse is over the bottom rating bar.",
     )
 
+    tab.checkbox(
+        "smart_scroll",
+        "Smart scroll for long cards",
+        "Let the mouse wheel scroll long cards normally. Hotkeys only trigger when you've reached the top or bottom of the page.",
+    )
+
     global_undo_cb = tab.checkbox(
         "right_click_global_undo",
         "Right-click undo can use global undo",

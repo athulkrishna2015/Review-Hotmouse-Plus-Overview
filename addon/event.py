@@ -1117,7 +1117,8 @@ def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
     cfg_js = (
         "window._hotmouse_config = {"
         f"wheel_ignore_scrollbar: {str(config.get('wheel_ignore_scrollbar', True)).lower()},"
-        f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()}"
+        f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()},"
+        f"smart_scroll: {str(config.get('smart_scroll', False)).lower()}"
         "};"
     )
     web_content.head += f"<script>{cfg_js}</script>"

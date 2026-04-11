@@ -25,5 +25,6 @@
     "undo_whitelist": ["Undo Answer Card"],
     "middle_click_scroll": true,
     "middle_click_dead_zone": 15,
-    "middle_click_sensitivity": 5
+    "middle_click_sensitivity": 5,
+    "smart_scroll": false
 }

@@ -18,6 +18,7 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Mouse click threshold**: Delay between subsequent clicks (0 for instant).
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
+    - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. Disabled by default.
     - **Middle-click drag to scroll**: Hold the middle mouse button and move up/down to scroll the page (like browser autoscroll). The cursor changes to a scroll icon while active. Enabled by default.
         - **Dead zone** (default 15 px): The area around the click origin where no scrolling occurs — prevents accidental scrolling from small hand movements. Increase for more stability, decrease for quicker response.
         - **Scroll sensitivity** (default 5, range 1–20): Controls how fast the page scrolls relative to mouse distance. The farther you move from the click point (beyond the dead zone), the faster it scrolls. Higher values = faster scrolling with less mouse movement.
@@ -54,6 +55,7 @@ If you find this add-on useful, please consider supporting its development:
 
 - **Fixed scroll debounce bug**: Continuous scrolling could both show the answer and rate the card in a single scroll gesture. Now requires two separate scroll actions — one to show the answer and another to rate.
 - **Middle-click drag scroll**: Hold the middle mouse button and move up/down to smoothly scroll long cards. Configurable dead zone and sensitivity in the General tab. Enabled by default.
+- **Smart scroll for long cards**: Added an option to let the mouse wheel scroll long cards normally. Wheel hotkeys only trigger when you've reached the end of the content. Disabled by default.
 
 ## 2026-03-19
 
