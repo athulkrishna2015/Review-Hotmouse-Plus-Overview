@@ -1,6 +1,14 @@
 if (!window.__reviewHotmouseWheelListenerInstalled) {
 window.__reviewHotmouseWheelListenerInstalled = true;
 
+function isScrollableContainer(node) {
+    if (!(node instanceof Element)) return false;
+    const style = window.getComputedStyle(node);
+    const overflowY = style.overflowY;
+    const canScroll = overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+    return canScroll && node.scrollHeight > node.clientHeight + 2;
+}
+
 document.addEventListener("wheel", (ev) => {
     const target = ev.target instanceof Element ? ev.target : null;
     const isScrollbar = ev.clientX > document.documentElement.clientWidth;
@@ -21,7 +29,7 @@ document.addEventListener("wheel", (ev) => {
     if (cfg.smart_scroll && !isBottom) {
         let scrollElem = target;
         while (scrollElem instanceof Element) {
-            if (scrollElem.scrollHeight > scrollElem.clientHeight + 2) {
+            if (isScrollableContainer(scrollElem)) {
                 break;
             }
             scrollElem = scrollElem.parentElement;

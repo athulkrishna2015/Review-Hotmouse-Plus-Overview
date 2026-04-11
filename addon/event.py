@@ -919,7 +919,7 @@ class HotmouseManager:
 
         # 120 is the standard mouse wheel "click" in Qt. 
         # Trackpads send many small events (1, 2, 5, etc).
-        threshold = config.get("scroll_accumulation_threshold", 120)
+        threshold = config.get("scroll_accumulation_threshold", 80)
 
         if self._wheel_accumulator >= threshold:
             if time_diff > config["threshold_wheel_ms"]:
@@ -1036,11 +1036,13 @@ class HotmouseEventFilter(QObject):
             if manager.right_click_bound_in_current_scope():
                 return True
 
-        # Native Qt wheel only used during reviewer; Overview wheel comes via JS
-        if mw.state == "review" and event.type() == QEvent.Type.Wheel:
-            # Review and Overview wheel gestures are handled in JS so smart scroll
-            # can inspect the actual page scroll position before triggering a hotkey.
-            return False
+        if (
+            event.type() == QEvent.Type.Wheel
+            and isinstance(event, QWheelEvent)
+            and _should_handle_native_wheel(obj, event)
+        ):
+            if manager.on_mouse_scroll(event):
+                return True
 
         if event.type() == QEvent.Type.ChildAdded:
             add_event_filter(event.child())
@@ -1088,10 +1090,73 @@ def _is_review_state() -> bool:
     return getattr(mw, "state", None) == "review"
 
 
+def _get_object_width(obj: QObject) -> int:
+    if hasattr(obj, "width") and isinstance(obj.width, (int, float)):
+        return int(obj.width)
+    if hasattr(obj, "width") and callable(obj.width):
+        try:
+            return int(obj.width())
+        except Exception:
+            return 0
+    if hasattr(obj, "geometry"):
+        try:
+            return int(obj.geometry().width())
+        except Exception:
+            return 0
+    return 0
+
+
+def _event_x(event: QWheelEvent) -> float:
+    try:
+        return float(event.position().x())
+    except AttributeError:
+        return float(event.pos().x())
+
+
+def _is_bottom_web_target(obj: QObject) -> bool:
+    curr = obj
+    while curr:
+        if curr == mw.bottomWeb:
+            return True
+        try:
+            curr = curr.parent()
+        except AttributeError:
+            break
+    return False
+
+
+def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
+    if getattr(mw, "state", None) not in ("review", "overview"):
+        return False
+    if config.get("smart_scroll", False):
+        return False
+
+    if config.get("wheel_ignore_scrollbar", True):
+        width = _get_object_width(obj)
+        if width > 0 and _event_x(event) > width - 30:
+            return False
+
+    if (
+        getattr(mw, "state", None) == "review"
+        and config.get("wheel_only_on_bottom_bar", False)
+        and not _is_bottom_web_target(obj)
+    ):
+        return False
+
+    return manager.has_wheel_hotkey
+
+
 def _should_inject_wheel_js(context: Optional[Any]) -> bool:
     if _is_reviewer_context(context) or _is_overview_context(context):
         return True
     return getattr(mw, "state", None) in ("review", "overview")
+
+
+def _normalize_web_delta(delta: float) -> float:
+    value = float(delta)
+    if abs(value) >= 80:
+        return 120.0 if value > 0 else -120.0
+    return value
 
 _EFDRC_EDIT_REASON = "efdr_edit"
 _EFDRC_FOCUS_PREFIX = "EFDRC!focuson#"
@@ -1157,9 +1222,9 @@ def handle_js_message(
         ):
             return (False, None)
 
-        dx = float(req.get("valueX", 0) or 0)
+        dx = _normalize_web_delta(float(req.get("valueX", 0) or 0))
         # Support legacy "value" key if JS isn't updated for some reason
-        dy = float(req.get("valueY", req.get("value", 0)) or 0)
+        dy = _normalize_web_delta(float(req.get("valueY", req.get("value", 0)) or 0))
         
         wheel_dir, raw_delta = WheelDir.from_web(dx, dy)
         if wheel_dir is None:

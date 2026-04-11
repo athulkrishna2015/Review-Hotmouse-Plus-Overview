@@ -16,11 +16,12 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 - General: Configure thresholds and scrolling behavior.
     - **Mouse scroll threshold**: Delay (ms) between subsequent scroll actions.
     - **Mouse click threshold**: Delay (ms) between subsequent click actions (0 for instant).
-    - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Essential for sensitive trackpads to prevent accidental triggers. 120 is one mouse wheel click.
+    - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Lower values make trackpad swipes more sensitive. Default is **80**; **120** matches the older wheel sensitivity.
     - **Horizontal Trackpad Swipes**: Support for swiping left/right on trackpads (horizontal scroll). Configurable just like vertical scroll. Default mapping: **Swipe Left = Hard**, **Swipe Right = Easy** during the answer phase.
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
-    - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Enabled by default.
+    - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Disabled by default.
+    - **Mouse wheel fallback**: When Smart scroll is off, Review and Overview wheel hotkeys use the native Qt wheel path for more reliable mouse-wheel triggering. Trackpads still work through the wheel/scroll accumulation path.
     - **Middle-click drag to scroll**: Hold the middle mouse button and move up/down to scroll the page (like browser autoscroll). The cursor changes to a scroll icon while active. Enabled by default.
         - **Dead zone** (default 15 px): The area around the click origin where no scrolling occurs — prevents accidental scrolling from small hand movements. Increase for more stability, decrease for quicker response.
         - **Scroll sensitivity** (default 5, range 1–20): Controls how fast the page scrolls relative to mouse distance. The farther you move from the click point (beyond the dead zone), the faster it scrolls. Higher values = faster scrolling with less mouse movement.
@@ -32,6 +33,8 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 - Congratulations Hotkeys: add/edit `c_*` mappings.
 - Question/Answer Hotkeys: unchanged; continue to use again/hard/good/easy/undo/etc.  
 - Edit‑During‑Review: If you use “Edit Field During Review (Cloze)”, Hotmouse temporarily suspends while you edit a field and resumes when the edit finishes.
+
+If you are upgrading from an older release: changing the shipped defaults does not rewrite your already-saved Anki config. If Smart scroll still seems enabled, turn it off once in the General tab or use Restore Defaults.
 
 ## Acknowledgments
 
@@ -56,12 +59,15 @@ If you find this add-on useful, please consider supporting its development:
 
 ## 2026-04-11
 
-- **Review/Overview smart scroll fix**: Wheel gestures now stay on the webview JS path, so long cards can scroll naturally before Show Answer or rating actions fire.
+- **Mouse wheel fallback restored**: Review and Overview wheel hotkeys now work natively again when smart scroll is off, fixing cases where only trackpad gestures were firing.
+- **Overview wheel fix**: Overview hotkeys now use the same non-smart native fallback path as review when smart scroll is disabled.
+- **More sensitive trackpad default**: Reduced the default wheel/trackpad threshold from 120 to 80 so swipes trigger sooner.
+- **Review/Overview smart scroll fix**: When Smart scroll is enabled, wheel gestures stay on the webview JS path so long cards can scroll naturally before Show Answer or rating actions fire.
 - **Trackpad delta fix**: Preserved fractional wheel deltas from the webview so smooth trackpad swipes can accumulate reliably, including left/right gestures.
 - **New Trackpad Actions tab**: Added a dedicated config tab for swipe up/down/left/right actions across Question, Answer, Overview, and Congratulations screens.
 - **Fixed scroll debounce bug**: Continuous scrolling could both show the answer and rate the card in a single scroll gesture. Now requires two separate scroll actions — one to show the answer and another to rate.
 - **Middle-click drag scroll**: Hold the middle mouse button and move up/down to smoothly scroll long cards. Configurable dead zone and sensitivity in the General tab. Enabled by default.
-- **Smart scroll for long cards**: Added an option to let the mouse wheel scroll long cards normally. Wheel hotkeys only trigger when you've reached the end of the content. Enabled by default.
+- **Smart scroll for long cards**: Added an option to let the mouse wheel scroll long cards normally. Wheel hotkeys only trigger when you've reached the end of the content. Disabled by default in the current release.
 - **Improved Trackpad Support**: Implemented a scroll accumulator and **Horizontal Swipe support**. You can now swipe left/right on your trackpad to rate cards (Default: Left = Hard, Right = Easy).
 
 ## 2026-03-19

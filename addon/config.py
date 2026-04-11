@@ -107,7 +107,7 @@ def general_tab(conf_window: ConfigWindow) -> None:
     tab.number_input(
         "scroll_accumulation_threshold",
         "Wheel/Trackpad distance threshold",
-        tooltip="How much 'scroll distance' (accumulation) is needed to trigger a hotkey. Higher values prevent accidental triggers on sensitive trackpads. 120 is one mouse wheel click.",
+        tooltip="How much 'scroll distance' (accumulation) is needed to trigger a hotkey. Lower values make trackpad swipes trigger sooner. 80 is the default; 120 matches the older wheel sensitivity.",
         minimum=1,
         maximum=1200,
     )

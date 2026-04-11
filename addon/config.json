@@ -28,6 +28,6 @@
     "middle_click_scroll": true,
     "middle_click_dead_zone": 15,
     "middle_click_sensitivity": 5,
-    "smart_scroll": true,
-    "scroll_accumulation_threshold": 120
+    "smart_scroll": false,
+    "scroll_accumulation_threshold": 80
 }

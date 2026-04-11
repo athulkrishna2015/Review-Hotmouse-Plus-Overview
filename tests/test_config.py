@@ -41,3 +41,11 @@ def test_trackpad_action_helpers() -> None:
     assert updated["a_wheel_left"] == "again"
     assert updated["o_wheel_down"] == "study_now"
     assert "c_wheel_right" not in updated
+
+
+def test_default_scroll_settings() -> None:
+    from aqt import mw
+
+    defaults = mw.addonManager.addonConfigDefaults("addon")
+    assert defaults["smart_scroll"] is False
+    assert defaults["scroll_accumulation_threshold"] == 80
