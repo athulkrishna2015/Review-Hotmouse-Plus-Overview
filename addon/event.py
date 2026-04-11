@@ -226,6 +226,11 @@ class HotmouseManager:
         self._mouse_undo_history: List[Dict[str, Any]] = []
         self._mouse_undo_chain_until: Optional[datetime.datetime] = None
         self._global_undo_armed_until: Optional[datetime.datetime] = None
+        # Middle-click-drag scroll state
+        self._mid_drag_active: bool = False
+        self._mid_drag_origin_y: int = 0
+        self._mid_drag_scroll_timer: Optional[QTimer] = None
+        self._mid_drag_speed: float = 0.0
         self.refresh_shortcuts()
 
     def add_menu(self) -> None:
@@ -855,12 +860,6 @@ class HotmouseManager:
         ACTIONS[action_str]()  # run action
         self.remember_last_hotmouse_action(action_str, prev_state, prev_enabled)
 
-        # Let rating happen immediately after showing the answer
-        if action_str == "show_ans":
-            self.last_scroll_time -= datetime.timedelta(
-                milliseconds=config.get("threshold_wheel_ms", 350) + 1
-            )
-
         return True
 
     def on_mouse_press(self, event: QMouseEvent) -> bool:
@@ -906,9 +905,90 @@ class HotmouseManager:
         else:
             return self.enabled
 
+    # ── Middle-click-drag scroll ──────────────────────────────────
+
+    def start_mid_drag(self, y: int) -> None:
+        """Begin middle-click-drag scroll mode."""
+        self._mid_drag_active = True
+        self._mid_drag_origin_y = y
+        self._mid_drag_speed = 0.0
+        QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))
+        if self._mid_drag_scroll_timer is None:
+            self._mid_drag_scroll_timer = QTimer()
+            self._mid_drag_scroll_timer.timeout.connect(self._mid_drag_tick)
+        self._mid_drag_scroll_timer.start(16)  # ~60 fps
+
+    def stop_mid_drag(self) -> None:
+        """End middle-click-drag scroll mode."""
+        self._mid_drag_active = False
+        self._mid_drag_speed = 0.0
+        QApplication.restoreOverrideCursor()
+        if self._mid_drag_scroll_timer is not None:
+            self._mid_drag_scroll_timer.stop()
+
+    def update_mid_drag(self, y: int) -> None:
+        """Update scroll speed based on mouse distance from origin."""
+        delta = y - self._mid_drag_origin_y
+        dead_zone = config.get("middle_click_dead_zone", 15)
+        if abs(delta) < dead_zone:
+            self._mid_drag_speed = 0.0
+        else:
+            # Speed grows with distance; sensitivity controls the multiplier
+            sensitivity = config.get("middle_click_sensitivity", 5) / 10.0
+            self._mid_drag_speed = (delta - (dead_zone if delta > 0 else -dead_zone)) * sensitivity
+
+    def _mid_drag_tick(self) -> None:
+        """Timer callback: perform one scroll step."""
+        # Failsafe: if the middle button was released but we missed the event, stop now
+        if not (QApplication.mouseButtons() & Qt.MouseButton.MiddleButton):
+            self.stop_mid_drag()
+            return
+        if not self._mid_drag_active or self._mid_drag_speed == 0.0:
+            return
+        px = int(self._mid_drag_speed)
+        if px == 0:
+            return
+        try:
+            mw.web.eval(f"window.scrollBy(0, {px});")
+        except Exception:
+            pass
+
 class HotmouseEventFilter(QObject):
     @no_type_check
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        # ── Middle-click-drag scrolling ───────────────────────────
+        if config.get("middle_click_scroll", True):
+            if event.type() == QEvent.Type.MouseButtonPress:
+                if (
+                    isinstance(event, QMouseEvent)
+                    and event.button() == Qt.MouseButton.MiddleButton
+                    and not manager._mid_drag_active
+                ):
+                    try:
+                        y = int(event.position().y())
+                    except AttributeError:
+                        y = event.pos().y()
+                    manager.start_mid_drag(y)
+                    return True
+
+            if event.type() == QEvent.Type.MouseButtonRelease:
+                if (
+                    isinstance(event, QMouseEvent)
+                    and event.button() == Qt.MouseButton.MiddleButton
+                    and manager._mid_drag_active
+                ):
+                    manager.stop_mid_drag()
+                    return True
+
+            if event.type() == QEvent.Type.MouseMove:
+                if isinstance(event, QMouseEvent) and manager._mid_drag_active:
+                    try:
+                        y = int(event.position().y())
+                    except AttributeError:
+                        y = event.pos().y()
+                    manager.update_mid_drag(y)
+                    return True
+
         # Double-click middle button to toggle addon
         if event.type() == QEvent.Type.MouseButtonDblClick:
             if isinstance(event, QMouseEvent) and event.button() == Qt.MouseButton.MiddleButton:
@@ -1033,6 +1113,14 @@ def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
     """Inject wheel detector into Reviewer and Overview webviews."""
     if not (_is_reviewer_context(context) or _is_overview_context(context)):
         return
+    # Inject config values so detect_wheel.js can check them synchronously
+    cfg_js = (
+        "window._hotmouse_config = {"
+        f"wheel_ignore_scrollbar: {str(config.get('wheel_ignore_scrollbar', True)).lower()},"
+        f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()}"
+        "};"
+    )
+    web_content.head += f"<script>{cfg_js}</script>"
     addon_package = mw.addonManager.addonFromModule(__name__)
     web_content.js.append(f"/_addons/{addon_package}/web/detect_wheel.js")
 

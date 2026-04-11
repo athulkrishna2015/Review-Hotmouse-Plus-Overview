@@ -148,6 +148,30 @@ def general_tab(conf_window: ConfigWindow) -> None:
     global_undo_cb.stateChanged.connect(on_global_undo_changed)
     undo_confirm_cb.stateChanged.connect(on_undo_confirm_changed)
 
+    tab.hseparator()
+
+    tab.checkbox(
+        "middle_click_scroll",
+        "Middle-click drag to scroll",
+        "Hold the middle mouse button (scroll wheel) and move up/down to scroll the page.",
+    )
+    tab.number_input(
+        "middle_click_dead_zone",
+        "Dead zone (pixels)",
+        tooltip="Minimum distance from click origin before scrolling starts.",
+        minimum=0,
+        maximum=100,
+    )
+    tab.number_input(
+        "middle_click_sensitivity",
+        "Scroll sensitivity (1–20)",
+        tooltip="How fast the page scrolls relative to mouse distance. Higher = faster.",
+        minimum=1,
+        maximum=20,
+    )
+
+    tab.hseparator()
+
     # Removed old right-click checkboxes; use the Overview/Congrats tabs to bind actions.
     tab.checkbox("tooltip", "When triggered, show action name")
     tab.checkbox("z_debug", "Debugging: Show hotkey on mouse action")

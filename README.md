@@ -3,7 +3,8 @@
 [Install via ankiweb](https://ankiweb.net/shared/info/1054369752)
 
 Configurable mouse hotkeys for Anki’s review workflow, now extended to the Overview screen and Congratulations screen with a built‑in deck_browser action to jump to the Decks selector.  
-**Pro Tip**: Double-click the middle mouse button (scroll wheel) to quickly enable or disable the add-on at any time.
+**Pro Tip**: Double-click the middle mouse button (scroll wheel) to quickly enable or disable the add-on at any time.  
+**New**: Hold the middle mouse button and move up/down to scroll long cards — like browser autoscroll.
 
 This add-on pairs well with [Deck Centerer]
 (https://ankiweb.net/shared/info/1520580564) and  [Audiovisual Feedback](https://ankiweb.net/shared/info/231569866).
@@ -17,6 +18,9 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
     - **Mouse click threshold**: Delay between subsequent clicks (0 for instant).
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
+    - **Middle-click drag to scroll**: Hold the middle mouse button and move up/down to scroll the page (like browser autoscroll). The cursor changes to a scroll icon while active. Enabled by default.
+        - **Dead zone** (default 15 px): The area around the click origin where no scrolling occurs — prevents accidental scrolling from small hand movements. Increase for more stability, decrease for quicker response.
+        - **Scroll sensitivity** (default 5, range 1–20): Controls how fast the page scrolls relative to mouse distance. The farther you move from the click point (beyond the dead zone), the faster it scrolls. Higher values = faster scrolling with less mouse movement.
     - **Mouse undo behavior**: Right-click undo prioritizes add-on actions triggered by mouse in the current session.
     - **Right-click undo can use global undo**: If enabled, right-click undo falls back to Anki global undo for any action. If disabled, it only falls back for whitelisted actions (like "Undo Answer Card" or actions in meta.json).
     - **Right-click again for global undo**: If enabled, when mouse undo is unavailable, a second right-click within 6 seconds will trigger global undo.
@@ -45,6 +49,11 @@ If you find this add-on useful, please consider supporting its development:
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/D1D01W6NQT)
 
 # Changelog
+
+## 2026-04-11
+
+- **Fixed scroll debounce bug**: Continuous scrolling could both show the answer and rate the card in a single scroll gesture. Now requires two separate scroll actions — one to show the answer and another to rate.
+- **Middle-click drag scroll**: Hold the middle mouse button and move up/down to smoothly scroll long cards. Configurable dead zone and sensitivity in the General tab. Enabled by default.
 
 ## 2026-03-19
 
@@ -92,9 +101,9 @@ If you find this add-on useful, please consider supporting its development:
 
 - Added threshold_click_ms setting (milliseconds) with a new “Mouse click threshold (1000 is 1 s)” control in the General tab; default 0 ms to disable click debouncing for maximum responsiveness.
 - Introduced a separate click debounce clock (last_click_time) and filtering in on_mouse_press that respects threshold_click_ms to prevent accidental rapid double‑activations when desired.
-- After show_ans, the add‑on now clears both wheel and click cooldowns and briefly forces the scope to Answer so the very next click can immediately rate without waiting, removing the perceived second‑click delay.
+- ~~After show_ans, the add‑on now clears both wheel and click cooldowns~~ (removed in 2026-04-11 to prevent accidental single-scroll rating).
 - Backward compatibility: if threshold_click_ms is missing it behaves as 0 ms; the config manager tolerates unknown keys, so existing setups remain stable.
-- Refined General tab copy to use SI phrasing (“1000 is 1 s”) and kept existing wheel behavior; wheel cooldown continues to be cleared after show_ans as before.
+- Refined General tab copy to use SI phrasing (“1000 is 1 s”).
 
 
 ## 2025-11-03
@@ -123,7 +132,7 @@ If you find this add-on useful, please consider supporting its development:
 
 ### Fixed
 - Deck overview scroll-down not triggering “Study Now” in some cases by adding a safe fallback that clicks “Study Now” on `o_wheel_down` when no mapping fires. (event.py)
-- Card rating screen not responding to immediate second scroll after “Show Answer” by removing the wheel cooldown right after `show_ans`. (event.py)
+- ~~Card rating screen not responding to immediate second scroll after “Show Answer” by removing the wheel cooldown right after `show_ans`~~ (reverted in 2026-04-11; scroll threshold now enforced between show_ans and rating). (event.py)
 - Startup `NameError` by ensuring `install_event_handlers` is defined before hook registration and instantiation is done after definitions. (event.py)
 
 ### Compatibility
