@@ -57,6 +57,13 @@ def general_tab(conf_window: ConfigWindow) -> None:
         "Let the mouse wheel scroll long cards normally. Hotkeys only trigger when you've reached the top or bottom of the page.",
     )
 
+    tab.checkbox(
+        "natural_scrolling",
+        "Natural scrolling (invert horizontal swipe)",
+        "Enable if your trackpad uses natural (reverse) scrolling. "
+        "Flips the left/right swipe direction so it matches your finger movement.",
+    )
+
     global_undo_cb = tab.checkbox(
         "right_click_global_undo",
         "Right-click undo can use global undo",

@@ -138,7 +138,8 @@ def handle_js_message(
         dx = _normalize_web_delta(dx_raw)
         dy = _normalize_web_delta(dy_raw)
 
-        wheel_dir, raw_delta = WheelDir.from_web(dx, dy)
+        invert_x = config.get("natural_scrolling", True)
+        wheel_dir, raw_delta = WheelDir.from_web(dx, dy, invert_x=invert_x)
         if wheel_dir is None:
             return (False, None)
 

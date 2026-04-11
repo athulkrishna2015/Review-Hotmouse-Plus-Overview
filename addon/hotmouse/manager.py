@@ -706,7 +706,8 @@ class HotmouseManager:
         return self.execute_shortcut(hotkey_str)
 
     def on_mouse_scroll(self, event: QWheelEvent) -> bool:
-        wheel_dir, delta = WheelDir.from_qt(event.angleDelta())
+        invert_x = config.get("natural_scrolling", True)
+        wheel_dir, delta = WheelDir.from_qt(event.angleDelta(), invert_x=invert_x)
         if wheel_dir is None:
             return False
         return self.handle_scroll(wheel_dir, delta, event.buttons())
@@ -725,8 +726,24 @@ class HotmouseManager:
             else:
                 return self.enabled
 
-        if wheel_dir != self._last_wheel_dir or time_diff > 500:
+        # Axis-aware accumulator: only reset when the direction changes or
+        # the gesture times out.  Trackpad swipes produce many small events
+        # that may oscillate between LEFT/DOWN due to imprecise fingers; by
+        # comparing at the axis level we avoid spurious resets.
+        if self._last_wheel_dir is None or time_diff > 500:
             self._wheel_accumulator = 0
+        elif wheel_dir != self._last_wheel_dir:
+            # Only preserve the accumulator if the axis stayed the same
+            # (e.g. LEFT→LEFT is fine; LEFT→RIGHT is a reversal → reset)
+            same_axis = (
+                self._last_wheel_dir in (WheelDir.LEFT, WheelDir.RIGHT)
+                and wheel_dir in (WheelDir.LEFT, WheelDir.RIGHT)
+            ) or (
+                self._last_wheel_dir in (WheelDir.UP, WheelDir.DOWN)
+                and wheel_dir in (WheelDir.UP, WheelDir.DOWN)
+            )
+            if not same_axis:
+                self._wheel_accumulator = 0
 
         self._last_wheel_dir = wheel_dir
         self._wheel_accumulator += abs(float(delta))

@@ -18,6 +18,7 @@ Open Tools → Add‑ons → Review Hotmouse Plus Overview → Config and use th
     - **Mouse click threshold**: Delay (ms) between subsequent click actions (0 for instant).
     - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Lower values make trackpad swipes more sensitive. Default is **60**; **120** matches the older wheel sensitivity.
     - **Horizontal Trackpad Swipes**: Support for swiping left/right on trackpads (horizontal scroll). Configurable just like vertical scroll. Default mapping: **Swipe Left = Hard**, **Swipe Right = Easy** during the answer phase.
+    - **Natural scrolling (invert horizontal swipe)**: Enable if your trackpad uses natural (reverse) scrolling. Flips the left/right swipe direction so it matches your finger movement. Enabled by default.
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
     - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Disabled by default, and always off on the Overview screen.
@@ -59,6 +60,8 @@ If you find this add-on useful, please consider supporting its development:
 
 ## 2026-04-11
 
+- **Trackpad axis locking**: Fixed horizontal two-finger swipes not triggering on trackpads. Added gesture-level axis locking in the JS wheel handler — once a dominant axis (horizontal/vertical) is detected during a continuous swipe, the add-on commits to it and filters out cross-axis noise. The Python-side scroll accumulator is now also axis-aware and no longer resets when imprecise finger movement causes momentary direction jitter.
+- **Natural scrolling option**: Added a `natural_scrolling` config toggle (General tab). When enabled (default), horizontal swipe direction matches physical finger movement — needed for systems with natural/reverse scrolling. Disable it if left/right swipe actions appear reversed on your setup.
 - **Mouse wheel fallback restored**: Review and Overview wheel hotkeys now work natively again when smart scroll is off, fixing cases where only trackpad gestures were firing.
 - **Overview wheel fix**: Overview hotkeys now use the same non-smart native fallback path as review when smart scroll is disabled.
 - **More sensitive trackpad default**: Reduced the default wheel/trackpad threshold from 120 to 80 so swipes trigger sooner.

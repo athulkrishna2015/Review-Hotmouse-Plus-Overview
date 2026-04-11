@@ -3,6 +3,16 @@ window.__reviewHotmouseWheelListenerInstalled = true;
 window.__hotmouseBoundaryLatch = window.__hotmouseBoundaryLatch || { down: false, up: false };
 window.__hotmouseBoundaryLatchTs = window.__hotmouseBoundaryLatchTs || { down: 0, up: 0 };
 
+// Axis lock for trackpad gestures: once a dominant axis is detected during a
+// continuous gesture, commit to it so imprecise finger movement doesn't cause
+// axis oscillation between horizontal and vertical.
+window.__hotmouseAxisLock = window.__hotmouseAxisLock || {
+    axis: null,      // "h" or "v" once locked
+    cumX: 0,
+    cumY: 0,
+    lastTs: 0
+};
+
 function isScrollableContainer(node) {
     if (!(node instanceof Element)) return false;
     const style = window.getComputedStyle(node);
@@ -25,11 +35,46 @@ document.addEventListener("wheel", (ev) => {
     // If only-bottom-bar mode is active and we're NOT on the bottom bar, allow normal scroll
     if (cfg.wheel_only_on_bottom_bar && !isBottom) return;
 
+    // --- Axis locking for trackpad gestures ---
+    // Trackpad two-finger swipes produce many small wheel events with mixed
+    // deltaX/deltaY.  We accumulate movement and once a dominant axis emerges
+    // (threshold: 10px total), lock to it for the rest of the gesture.
+    // A gesture is considered "continuous" if events arrive within 300ms.
+    const axL = window.__hotmouseAxisLock;
+    const now = Date.now();
+    if (now - axL.lastTs > 300) {
+        // New gesture – reset
+        axL.axis = null;
+        axL.cumX = 0;
+        axL.cumY = 0;
+    }
+    axL.lastTs = now;
+    axL.cumX += ev.deltaX;
+    axL.cumY += ev.deltaY;
+
+    if (!axL.axis) {
+        const ax = Math.abs(axL.cumX);
+        const ay = Math.abs(axL.cumY);
+        if (ax >= 10 || ay >= 10) {
+            axL.axis = ax > ay ? "h" : "v";
+        }
+    }
+
+    // Determine effective deltas: once locked, zero out the non-dominant axis
+    let effectiveDX = ev.deltaX;
+    let effectiveDY = ev.deltaY;
+    if (axL.axis === "h") {
+        effectiveDY = 0;
+    } else if (axL.axis === "v") {
+        effectiveDX = 0;
+    }
+
     // Smart scroll: let the page scroll naturally for long cards, only trigger
     // the hotkey action when the user has reached the boundary and scrolls again.
     // If the mouse is on the bottom bar, bypass this and trigger the hotkey instantly.
-    // NOTE: Smart scroll currently only applies to VERTICAL movement.
-    if (cfg.smart_scroll && !isBottom) {
+    // NOTE: Smart scroll only applies to VERTICAL movement; horizontal gestures bypass it.
+    const isHorizontalGesture = axL.axis === "h";
+    if (cfg.smart_scroll && !isBottom && !isHorizontalGesture) {
         let scrollElem = target;
         while (scrollElem instanceof Element) {
             if (isScrollableContainer(scrollElem)) {
@@ -48,8 +93,8 @@ document.addEventListener("wheel", (ev) => {
         const isScrollable = scrollHeight > clientHeight + 2;
 
         if (isScrollable) {
-            const scrollingDown = ev.deltaY > 0;
-            const scrollingUp = ev.deltaY < 0;
+            const scrollingDown = effectiveDY > 0;
+            const scrollingUp = effectiveDY < 0;
             
             // Check boundaries with some margin for fractional DPI scaling
             const atBottom = (scrollTop + clientHeight) >= (scrollHeight - 4);
@@ -104,6 +149,9 @@ document.addEventListener("wheel", (ev) => {
         }
     }
 
+    // If neither axis has meaningful movement yet, skip
+    if (effectiveDX === 0 && effectiveDY === 0) return;
+
     // Prevent default BEFORE calling pycmd (which is async in modern Anki)
     // so the page doesn't scroll while the hotkey action fires
     ev.preventDefault();
@@ -111,8 +159,8 @@ document.addEventListener("wheel", (ev) => {
 
     let req = {
         "key": "wheel",
-        "valueX": ev.deltaX,
-        "valueY": ev.deltaY,
+        "valueX": effectiveDX,
+        "valueY": effectiveDY,
         "is_scrollbar": isScrollbar,
         "is_bottom": isBottom,
         "at_boundary": atBoundary
@@ -120,3 +168,4 @@ document.addEventListener("wheel", (ev) => {
     pycmd("ReviewHotmouse#" + JSON.stringify(req));
 }, { passive: false });
 }
+
