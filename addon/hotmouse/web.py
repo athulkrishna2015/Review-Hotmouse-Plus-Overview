@@ -89,12 +89,14 @@ def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
     smart_scroll_enabled = config.get("smart_scroll", False)
     if _is_overview_context(context) or getattr(mw, "state", None) == "overview":
         smart_scroll_enabled = False
+    enabled = bool(manager and manager.enabled)
     cfg_js = (
         "window._hotmouse_config = {"
         f"wheel_ignore_scrollbar: {str(config.get('wheel_ignore_scrollbar', True)).lower()},"
         f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()},"
         f"smart_scroll: {str(smart_scroll_enabled).lower()}"
         "};"
+        f"window._hotmouse_enabled = {str(enabled).lower()};"
     )
     web_content.head += f"<script>{cfg_js}</script>"
     addon_package = mw.addonManager.addonFromModule(__name__)

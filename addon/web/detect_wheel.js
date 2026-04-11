@@ -32,6 +32,10 @@ document.addEventListener("wheel", (ev) => {
 
     const cfg = window._hotmouse_config || {};
 
+    // If the addon is disabled (e.g. double-click toggle), let the page
+    // scroll normally — don't preventDefault or send pycmd.
+    if (window._hotmouse_enabled === false) return;
+
     // If only-bottom-bar mode is active and we're NOT on the bottom bar, allow normal scroll
     if (cfg.wheel_only_on_bottom_bar && !isBottom) return;
 

@@ -62,6 +62,8 @@ If you find this add-on useful, please consider supporting its development:
 
 - **Trackpad axis locking**: Fixed horizontal two-finger swipes not triggering on trackpads. Added gesture-level axis locking in the JS wheel handler — once a dominant axis (horizontal/vertical) is detected during a continuous swipe, the add-on commits to it and filters out cross-axis noise. The Python-side scroll accumulator is now also axis-aware and no longer resets when imprecise finger movement causes momentary direction jitter.
 - **Natural scrolling option**: Added a `natural_scrolling` config toggle (General tab). When enabled (default), horizontal swipe direction matches physical finger movement — needed for systems with natural/reverse scrolling. Disable it if left/right swipe actions appear reversed on your setup.
+- **Scrolling restored when addon disabled**: Disabling the addon via double-click toggle (middle mouse) no longer blocks page scrolling. The JS wheel handler now checks the addon's enabled state and skips `preventDefault` when disabled.
+- **Editor/browser scrolling fix**: The native event filter now only intercepts mouse and wheel events during review/overview states. Scrolling in the editor, browser, deck browser, and other Anki windows is no longer affected.
 - **Mouse wheel fallback restored**: Review and Overview wheel hotkeys now work natively again when smart scroll is off, fixing cases where only trackpad gestures were firing.
 - **Overview wheel fix**: Overview hotkeys now use the same non-smart native fallback path as review when smart scroll is disabled.
 - **More sensitive trackpad default**: Reduced the default wheel/trackpad threshold from 120 to 80 so swipes trigger sooner.

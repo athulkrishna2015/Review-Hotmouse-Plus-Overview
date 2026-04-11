@@ -63,9 +63,20 @@ class HotmouseManager:
 
     def enable(self) -> None:
         self.enabled = True
+        self._sync_enabled_to_web()
 
     def disable(self) -> None:
         self.enabled = False
+        self._sync_enabled_to_web()
+
+    def _sync_enabled_to_web(self) -> None:
+        """Push the enabled state to the JS webview so detect_wheel.js
+        can skip preventDefault when the addon is disabled."""
+        js_val = "true" if self.enabled else "false"
+        try:
+            mw.web.eval(f"window._hotmouse_enabled = {js_val};")
+        except Exception:
+            pass
 
     def suspend(self, reason: str) -> None:
         if reason in self._suspend_reasons:
@@ -867,6 +878,17 @@ def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
 class HotmouseEventFilter(QObject):
     @no_type_check
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        # Always propagate the event filter to new children so it stays
+        # installed when Anki rebuilds the webview widget tree.
+        if event.type() == QEvent.Type.ChildAdded:
+            add_event_filter(event.child())
+            return False
+
+        # Only intercept events during review / overview; let normal
+        # scrolling, clicks, etc. pass through in the editor, browser,
+        # deck browser, and other Anki windows.
+        if getattr(mw, "state", None) not in ("review", "overview"):
+            return False
         if config.get("middle_click_scroll", True):
             if event.type() == QEvent.Type.MouseButtonPress:
                 if (
@@ -920,9 +942,6 @@ class HotmouseEventFilter(QObject):
         ):
             if self.manager.on_mouse_scroll(event):
                 return True
-
-        if event.type() == QEvent.Type.ChildAdded:
-            add_event_filter(event.child())
 
         return False
 
