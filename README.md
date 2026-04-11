@@ -12,7 +12,7 @@ It also plays nicely with “[Edit Field During Review (Cloze)](https://ankiweb.
 
 ## Configuration
 
-Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
+Open Tools → Add‑ons → Review Hotmouse Plus Overview → Config and use the tabs:
 - General: Configure thresholds and scrolling behavior.
     - **Mouse scroll threshold**: Delay (ms) between subsequent scroll actions.
     - **Mouse click threshold**: Delay (ms) between subsequent click actions (0 for instant).
