@@ -12,7 +12,8 @@ document.addEventListener("wheel", (ev) => {
 
     // Smart scroll: let the page scroll naturally for long cards, only trigger
     // the hotkey action when the user has reached the boundary and scrolls again.
-    if (cfg.smart_scroll) {
+    // If the mouse is on the bottom bar, bypass this and trigger the hotkey instantly.
+    if (cfg.smart_scroll && !isBottom) {
         const doc = document.documentElement;
         const scrollable = doc.scrollHeight > window.innerHeight + 2;
 
