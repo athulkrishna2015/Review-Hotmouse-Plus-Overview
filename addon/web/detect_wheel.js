@@ -1,5 +1,6 @@
 if (!window.__reviewHotmouseWheelListenerInstalled) {
 window.__reviewHotmouseWheelListenerInstalled = true;
+window.__hotmouseBoundaryLatch = window.__hotmouseBoundaryLatch || { down: false, up: false };
 
 function isScrollableContainer(node) {
     if (!(node instanceof Element)) return false;
@@ -55,9 +56,29 @@ document.addEventListener("wheel", (ev) => {
 
             // Not at the boundary yet — let the page scroll normally
             // Only block vertical gestures if we're not at the bounds
-            if (scrollingDown && !atBottom) return;
-            if (scrollingUp && !atTop) return;
+            if (scrollingDown && !atBottom) {
+                window.__hotmouseBoundaryLatch.down = false;
+                return;
+            }
+            if (scrollingUp && !atTop) {
+                window.__hotmouseBoundaryLatch.up = false;
+                return;
+            }
             atBoundary = (scrollingDown && atBottom) || (scrollingUp && atTop);
+
+            // Require another scroll after first reaching a boundary on scrollable cards.
+            if (scrollingDown && atBottom && !window.__hotmouseBoundaryLatch.down) {
+                window.__hotmouseBoundaryLatch.down = true;
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
+            if (scrollingUp && atTop && !window.__hotmouseBoundaryLatch.up) {
+                window.__hotmouseBoundaryLatch.up = true;
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
         } else {
             atBoundary = true;
         }
