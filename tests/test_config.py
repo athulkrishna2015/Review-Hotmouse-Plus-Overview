@@ -48,4 +48,4 @@ def test_default_scroll_settings() -> None:
 
     defaults = mw.addonManager.addonConfigDefaults("addon")
     assert defaults["smart_scroll"] is False
-    assert defaults["scroll_accumulation_threshold"] == 80
+    assert defaults["scroll_accumulation_threshold"] == 60

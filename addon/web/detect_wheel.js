@@ -13,6 +13,7 @@ document.addEventListener("wheel", (ev) => {
     const target = ev.target instanceof Element ? ev.target : null;
     const isScrollbar = ev.clientX > document.documentElement.clientWidth;
     const isBottom = window.innerHeight < 150 || !!(target && target.closest("#checker, #bottombar"));
+    let atBoundary = false;
 
     // Allow normal scrolling on the scrollbar area
     if (isScrollbar) return;
@@ -56,6 +57,9 @@ document.addEventListener("wheel", (ev) => {
             // Only block vertical gestures if we're not at the bounds
             if (scrollingDown && !atBottom) return;
             if (scrollingUp && !atTop) return;
+            atBoundary = (scrollingDown && atBottom) || (scrollingUp && atTop);
+        } else {
+            atBoundary = true;
         }
     }
 
@@ -69,7 +73,8 @@ document.addEventListener("wheel", (ev) => {
         "valueX": ev.deltaX,
         "valueY": ev.deltaY,
         "is_scrollbar": isScrollbar,
-        "is_bottom": isBottom
+        "is_bottom": isBottom,
+        "at_boundary": atBoundary
     }
     pycmd("ReviewHotmouse#" + JSON.stringify(req));
 }, { passive: false });

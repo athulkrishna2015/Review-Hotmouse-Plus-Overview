@@ -16,11 +16,11 @@ Open Tools → Add‑ons → Review Hotmouse → Config and use the tabs:
 - General: Configure thresholds and scrolling behavior.
     - **Mouse scroll threshold**: Delay (ms) between subsequent scroll actions.
     - **Mouse click threshold**: Delay (ms) between subsequent click actions (0 for instant).
-    - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Lower values make trackpad swipes more sensitive. Default is **80**; **120** matches the older wheel sensitivity.
+    - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Lower values make trackpad swipes more sensitive. Default is **60**; **120** matches the older wheel sensitivity.
     - **Horizontal Trackpad Swipes**: Support for swiping left/right on trackpads (horizontal scroll). Configurable just like vertical scroll. Default mapping: **Swipe Left = Hard**, **Swipe Right = Easy** during the answer phase.
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else.
-    - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Disabled by default.
+    - **Smart scroll for long cards**: If enabled, allows the mouse wheel to scroll long cards normally. Wheel hotkeys (e.g. scroll down to show answer) only trigger when you reach the top or bottom of the page and scroll again. **If your mouse is over the bottom rating bar, hotkeys will always trigger instantly, bypassing this.** Disabled by default, and always off on the Overview screen.
     - **Mouse wheel fallback**: When Smart scroll is off, Review and Overview wheel hotkeys use the native Qt wheel path for more reliable mouse-wheel triggering. Trackpads still work through the wheel/scroll accumulation path.
     - **Middle-click drag to scroll**: Hold the middle mouse button and move up/down to scroll the page (like browser autoscroll). The cursor changes to a scroll icon while active. Enabled by default.
         - **Dead zone** (default 15 px): The area around the click origin where no scrolling occurs — prevents accidental scrolling from small hand movements. Increase for more stability, decrease for quicker response.
