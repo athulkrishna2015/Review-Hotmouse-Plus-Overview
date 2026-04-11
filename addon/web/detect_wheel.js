@@ -14,14 +14,21 @@ document.addEventListener("wheel", (ev) => {
     // the hotkey action when the user has reached the boundary and scrolls again.
     // If the mouse is on the bottom bar, bypass this and trigger the hotkey instantly.
     if (cfg.smart_scroll && !isBottom) {
-        const doc = document.documentElement;
-        const scrollable = doc.scrollHeight > window.innerHeight + 2;
+        const scrollElem = document.scrollingElement || document.documentElement;
+        
+        const scrollHeight = Math.round(scrollElem.scrollHeight);
+        const clientHeight = Math.round(scrollElem.clientHeight);
+        const scrollTop = Math.round(scrollElem.scrollTop || window.scrollY || 0);
 
-        if (scrollable) {
+        const isScrollable = scrollHeight > clientHeight + 2;
+
+        if (isScrollable) {
             const scrollingDown = ev.deltaY > 0;
             const scrollingUp = ev.deltaY < 0;
-            const atBottom = (window.scrollY + window.innerHeight) >= (doc.scrollHeight - 2);
-            const atTop = window.scrollY <= 1;
+            
+            // Check boundaries with some margin for fractional DPI scaling
+            const atBottom = (scrollTop + clientHeight) >= (scrollHeight - 4);
+            const atTop = scrollTop <= 2;
 
             // Not at the boundary yet — let the page scroll normally
             if (scrollingDown && !atBottom) return;
