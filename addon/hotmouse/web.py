@@ -49,7 +49,16 @@ def _is_review_state() -> bool:
 def _should_inject_wheel_js(context: Optional[Any]) -> bool:
     if _is_reviewer_context(context) or _is_overview_context(context):
         return True
-    return getattr(mw, "state", None) in ("review", "overview")
+    # Fallback: only inject if the context's webview is actually the main
+    # review/overview webview, NOT the editor or other dialog webviews that
+    # happen to load while mw.state is still "review".
+    if getattr(mw, "state", None) in ("review", "overview"):
+        ctx_web = getattr(context, "web", None)
+        if ctx_web is not None and ctx_web in (mw.web, mw.bottomWeb):
+            return True
+        # If there's no web attribute on the context, be conservative and
+        # skip injection to avoid breaking editor/browser scrolling.
+    return False
 
 
 def _normalize_web_delta(delta: float) -> float:
