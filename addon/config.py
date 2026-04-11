@@ -200,7 +200,7 @@ class Options(NamedTuple):
 OPTS = Options(
     mode=["press", "click", "wheel"],
     button=[b.name for b in Button],
-    wheel=["up", "down"],
+    wheel=["up", "down", "left", "right"],
     action=ACTION_OPTS,
 )
 

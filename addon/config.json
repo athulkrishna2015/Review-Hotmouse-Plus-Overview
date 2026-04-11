@@ -7,6 +7,8 @@
         "q_click_right": "undo_hotmouse",
         "a_wheel_up": "again",
         "a_wheel_down": "good",
+        "a_wheel_left": "hard",
+        "a_wheel_right": "easy",
         "a_press_middle_wheel_up": "hard",
         "a_press_middle_wheel_down": "easy",
         "o_wheel_down": "study_now",

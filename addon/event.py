@@ -183,26 +183,30 @@ class Button(Enum):
 class WheelDir(Enum):
     DOWN = -1
     UP = 1
+    LEFT = 2
+    RIGHT = 3
 
     @classmethod
-    def from_qt(cls, angle_delta: QPoint) -> Optional["WheelDir"]:
-        delta = angle_delta.y()
-        if delta > 0:
-            return cls.UP
-        elif delta < 0:
-            return cls.DOWN
-        else:
-            return None
+    def from_qt(cls, angle_delta: QPoint) -> Tuple[Optional["WheelDir"], int]:
+        dx = angle_delta.x()
+        dy = angle_delta.y()
+        # Prioritize the axis with larger movement
+        if abs(dy) >= abs(dx) and dy != 0:
+            return (cls.UP if dy > 0 else cls.DOWN), dy
+        elif abs(dx) > abs(dy) and dx != 0:
+            # Qt x: positive = right, negative = left
+            return (cls.RIGHT if dx > 0 else cls.LEFT), dx
+        return None, 0
 
     @classmethod
-    def from_web(cls, delta: int) -> Optional["WheelDir"]:
-        # web and qt have opposite delta sign
-        if delta < 0:
-            return cls.UP
-        elif delta > 0:
-            return cls.DOWN
-        else:
-            return None
+    def from_web(cls, dx: int, dy: int) -> Tuple[Optional["WheelDir"], int]:
+        # Web dy: positive = down, negative = up
+        # Web dx: positive = right, negative = left
+        if abs(dy) >= abs(dx) and dy != 0:
+            return (cls.DOWN if dy > 0 else cls.UP), dy
+        elif abs(dx) > abs(dy) and dx != 0:
+            return (cls.RIGHT if dx > 0 else cls.LEFT), dx
+        return None, 0
 
 class HotmouseManager:
     has_wheel_hotkey: bool
@@ -833,6 +837,10 @@ class HotmouseManager:
             parts.append("wheel_up")
         elif wheel == WheelDir.DOWN:
             parts.append("wheel_down")
+        elif wheel == WheelDir.LEFT:
+            parts.append("wheel_left")
+        elif wheel == WheelDir.RIGHT:
+            parts.append("wheel_right")
         return "_".join(parts)
 
     def execute_shortcut(self, hotkey_str: str) -> bool:
@@ -891,8 +899,7 @@ class HotmouseManager:
         return self.execute_shortcut(hotkey_str)
 
     def on_mouse_scroll(self, event: QWheelEvent) -> bool:
-        delta = event.angleDelta().y()
-        wheel_dir = WheelDir.from_qt(event.angleDelta())
+        wheel_dir, delta = WheelDir.from_qt(event.angleDelta())
         if wheel_dir is None:
             return False
         return self.handle_scroll(wheel_dir, delta, event.buttons())
@@ -1178,8 +1185,11 @@ def handle_js_message(
         ):
             return (False, None)
 
-        raw_delta = int(req.get("value", 0))
-        wheel_dir = WheelDir.from_web(raw_delta)
+        dx = int(req.get("valueX", 0))
+        # Support legacy "value" key if JS isn't updated for some reason
+        dy = int(req.get("valueY", req.get("value", 0)))
+        
+        wheel_dir, raw_delta = WheelDir.from_web(dx, dy)
         if wheel_dir is None:
             return (False, None)
 

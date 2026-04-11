@@ -13,6 +13,7 @@ document.addEventListener("wheel", (ev) => {
     // Smart scroll: let the page scroll naturally for long cards, only trigger
     // the hotkey action when the user has reached the boundary and scrolls again.
     // If the mouse is on the bottom bar, bypass this and trigger the hotkey instantly.
+    // NOTE: Smart scroll currently only applies to VERTICAL movement.
     if (cfg.smart_scroll && !isBottom) {
         const scrollElem = document.scrollingElement || document.documentElement;
         
@@ -31,6 +32,7 @@ document.addEventListener("wheel", (ev) => {
             const atTop = scrollTop <= 2;
 
             // Not at the boundary yet — let the page scroll normally
+            // Only block vertical gestures if we're not at the bounds
             if (scrollingDown && !atBottom) return;
             if (scrollingUp && !atTop) return;
         }
@@ -43,7 +45,8 @@ document.addEventListener("wheel", (ev) => {
 
     let req = {
         "key": "wheel",
-        "value": ev.deltaY,
+        "valueX": ev.deltaX,
+        "valueY": ev.deltaY,
         "is_scrollbar": isScrollbar,
         "is_bottom": isBottom
     }
