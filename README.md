@@ -58,6 +58,11 @@ If you find this add-on useful, please consider supporting its development:
 
 # Changelog
 
+## 2026-04-20
+
+- **Multi-directional Middle-Click Drag**: Middle-click drag scrolling now supports both horizontal and vertical axes simultaneously.
+- **Unmapped Scroll Pass-Through**: Trackpad swipes and scroll events now gracefully pass through to native scrolling if they are not explicitly mapped to any action in the current screen (e.g., swiping left/right on Question screen).
+
 ## 2026-04-11
 
 - **Trackpad axis locking**: Fixed horizontal two-finger swipes not triggering on trackpads. Added gesture-level axis locking in the JS wheel handler — once a dominant axis (horizontal/vertical) is detected during a continuous swipe, the add-on commits to it and filters out cross-axis noise. The Python-side scroll accumulator is now also axis-aware and no longer resets when imprecise finger movement causes momentary direction jitter.
