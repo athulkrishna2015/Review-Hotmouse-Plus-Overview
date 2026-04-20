@@ -103,10 +103,16 @@ def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
         "window._hotmouse_config = {"
         f"wheel_ignore_scrollbar: {str(config.get('wheel_ignore_scrollbar', True)).lower()},"
         f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()},"
-        f"smart_scroll: {str(smart_scroll_enabled).lower()}"
+        f"smart_scroll: {str(smart_scroll_enabled).lower()},"
+        f"natural_scrolling: {str(config.get('natural_scrolling', True)).lower()}"
         "};"
         f"window._hotmouse_enabled = {str(enabled).lower()};"
+        f"window._hotmouse_shortcuts = {json.dumps(config.get('shortcuts', {}))};"
     )
+    if _is_overview_context(context) or getattr(mw, "state", None) == "overview":
+        cfg_js += "window._hotmouse_scope = 'o';"
+    else:
+        cfg_js += "window._hotmouse_scope = 'r';"
     web_content.head += f"<script>{cfg_js}</script>"
     addon_package = mw.addonManager.addonFromModule(__name__)
     web_content.js.append(f"/_addons/{addon_package}/web/detect_wheel.js")

@@ -51,9 +51,11 @@ class HotmouseManager:
         self._wheel_action_latched: bool = False
         self._wheel_action_dir: Optional[WheelDir] = None
         self._mid_drag_active: bool = False
+        self._mid_drag_origin_x: int = 0
         self._mid_drag_origin_y: int = 0
         self._mid_drag_scroll_timer: Optional[QTimer] = None
-        self._mid_drag_speed: float = 0.0
+        self._mid_drag_speed_x: float = 0.0
+        self._mid_drag_speed_y: float = 0.0
         self.refresh_shortcuts()
 
     def add_menu(self, conf_open: Callable[[], None]) -> None:
@@ -778,10 +780,12 @@ class HotmouseManager:
         else:
             return self.enabled
 
-    def start_mid_drag(self, y: int) -> None:
+    def start_mid_drag(self, x: int, y: int) -> None:
         self._mid_drag_active = True
+        self._mid_drag_origin_x = x
         self._mid_drag_origin_y = y
-        self._mid_drag_speed = 0.0
+        self._mid_drag_speed_x = 0.0
+        self._mid_drag_speed_y = 0.0
         QApplication.setOverrideCursor(QCursor(Qt.CursorShape.SizeAllCursor))
         if self._mid_drag_scroll_timer is None:
             self._mid_drag_scroll_timer = QTimer()
@@ -790,31 +794,40 @@ class HotmouseManager:
 
     def stop_mid_drag(self) -> None:
         self._mid_drag_active = False
-        self._mid_drag_speed = 0.0
+        self._mid_drag_speed_x = 0.0
+        self._mid_drag_speed_y = 0.0
         QApplication.restoreOverrideCursor()
         if self._mid_drag_scroll_timer is not None:
             self._mid_drag_scroll_timer.stop()
 
-    def update_mid_drag(self, y: int) -> None:
-        delta = y - self._mid_drag_origin_y
+    def update_mid_drag(self, x: int, y: int) -> None:
+        delta_x = x - self._mid_drag_origin_x
+        delta_y = y - self._mid_drag_origin_y
         dead_zone = config.get("middle_click_dead_zone", 15)
-        if abs(delta) < dead_zone:
-            self._mid_drag_speed = 0.0
+        sensitivity = config.get("middle_click_sensitivity", 5) / 10.0
+        
+        if abs(delta_x) < dead_zone:
+            self._mid_drag_speed_x = 0.0
         else:
-            sensitivity = config.get("middle_click_sensitivity", 5) / 10.0
-            self._mid_drag_speed = (delta - (dead_zone if delta > 0 else -dead_zone)) * sensitivity
+            self._mid_drag_speed_x = (delta_x - (dead_zone if delta_x > 0 else -dead_zone)) * sensitivity
+
+        if abs(delta_y) < dead_zone:
+            self._mid_drag_speed_y = 0.0
+        else:
+            self._mid_drag_speed_y = (delta_y - (dead_zone if delta_y > 0 else -dead_zone)) * sensitivity
 
     def _mid_drag_tick(self) -> None:
         if not (QApplication.mouseButtons() & Qt.MouseButton.MiddleButton):
             self.stop_mid_drag()
             return
-        if not self._mid_drag_active or self._mid_drag_speed == 0.0:
+        if not self._mid_drag_active or (self._mid_drag_speed_x == 0.0 and self._mid_drag_speed_y == 0.0):
             return
-        px = int(self._mid_drag_speed)
-        if px == 0:
+        px_x = int(self._mid_drag_speed_x)
+        px_y = int(self._mid_drag_speed_y)
+        if px_x == 0 and px_y == 0:
             return
         try:
-            mw.web.eval(f"window.scrollBy(0, {px});")
+            mw.web.eval(f"window.scrollBy({px_x}, {px_y});")
         except Exception:
             pass
 
@@ -897,10 +910,12 @@ class HotmouseEventFilter(QObject):
                     and not self.manager._mid_drag_active
                 ):
                     try:
+                        x = int(event.position().x())
                         y = int(event.position().y())
                     except AttributeError:
+                        x = event.pos().x()
                         y = event.pos().y()
-                    self.manager.start_mid_drag(y)
+                    self.manager.start_mid_drag(x, y)
                     return True
 
             if event.type() == QEvent.Type.MouseButtonRelease:
@@ -915,10 +930,12 @@ class HotmouseEventFilter(QObject):
             if event.type() == QEvent.Type.MouseMove:
                 if isinstance(event, QMouseEvent) and self.manager._mid_drag_active:
                     try:
+                        x = int(event.position().x())
                         y = int(event.position().y())
                     except AttributeError:
+                        x = event.pos().x()
                         y = event.pos().y()
-                    self.manager.update_mid_drag(y)
+                    self.manager.update_mid_drag(x, y)
                     return True
 
         if event.type() == QEvent.Type.MouseButtonDblClick:

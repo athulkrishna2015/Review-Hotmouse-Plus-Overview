@@ -5,7 +5,8 @@ from aqt import mw
 from aqt.qt import Qt, QPoint
 from aqt.utils import tooltip
 
-if False:  # typing-only
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
     from .manager import HotmouseManager
 
 _manager: Optional["HotmouseManager"] = None

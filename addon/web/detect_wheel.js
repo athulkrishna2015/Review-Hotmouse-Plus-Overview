@@ -156,6 +156,50 @@ document.addEventListener("wheel", (ev) => {
     // If neither axis has meaningful movement yet, skip
     if (effectiveDX === 0 && effectiveDY === 0) return;
 
+    // Check if there is anything actually mapped to this event.
+    // If not, let it through natively.
+    let dx = effectiveDX;
+    let dy = effectiveDY;
+    if (cfg.natural_scrolling !== false) {
+        dx = -dx;
+    }
+    let wheelDir = null;
+    if (Math.abs(dy) >= Math.abs(dx) && dy !== 0) {
+        wheelDir = dy > 0 ? "down" : "up";
+    } else if (Math.abs(dx) > Math.abs(dy) && dx !== 0) {
+        wheelDir = dx > 0 ? "right" : "left";
+    }
+
+    if (wheelDir && window._hotmouse_shortcuts) {
+        let btns = [];
+        if (ev.buttons & 1) btns.push("press_left");
+        if (ev.buttons & 2) btns.push("press_right");
+        if (ev.buttons & 4) btns.push("press_middle");
+        if (ev.buttons & 8) btns.push("press_xbutton1");
+        if (ev.buttons & 16) btns.push("press_xbutton2");
+
+        let scope = "q";
+        if (window._hotmouse_scope === "o") {
+            scope = "o";
+        } else {
+            if (document.body && document.body.classList.contains("answer")) {
+                scope = "a";
+            } else if (document.getElementById("answer")) {
+                scope = "a";
+            }
+        }
+
+        let parts = [scope].concat(btns);
+        parts.push("wheel_" + wheelDir);
+        let hotkey_str = parts.join("_");
+        
+        let action = window._hotmouse_shortcuts[hotkey_str];
+        if (!action || action === "" || action === "<none>") {
+            // Nothing mapped, let native scrolling take over immediately
+            return;
+        }
+    }
+
     // Prevent default BEFORE calling pycmd (which is async in modern Anki)
     // so the page doesn't scroll while the hotkey action fires
     ev.preventDefault();
