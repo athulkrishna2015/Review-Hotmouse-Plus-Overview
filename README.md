@@ -58,6 +58,10 @@ If you find this add-on useful, please consider supporting its development:
 
 # Changelog
 
+## 2026-04-21
+
+- **Horizontal Scrollbar Exclusion**: Moving the mouse over the bottom horizontal scrollbar will now correctly allow native horizontal scrolling without triggering add-on actions, matching the existing behavior for vertical scrollbars.
+
 ## 2026-04-20
 
 - **Multi-directional Middle-Click Drag**: Middle-click drag scrolling now supports both horizontal and vertical axes simultaneously.

@@ -23,7 +23,9 @@ function isScrollableContainer(node) {
 
 document.addEventListener("wheel", (ev) => {
     const target = ev.target instanceof Element ? ev.target : null;
-    const isScrollbar = ev.clientX > document.documentElement.clientWidth;
+    const isVerticalScrollbar = ev.clientX > document.documentElement.clientWidth;
+    const isHorizontalScrollbar = ev.clientY > document.documentElement.clientHeight;
+    const isScrollbar = isVerticalScrollbar || isHorizontalScrollbar;
     const isBottom = window.innerHeight < 150 || !!(target && target.closest("#checker, #bottombar"));
     let atBoundary = false;
 

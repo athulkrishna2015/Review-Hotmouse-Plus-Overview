@@ -848,11 +848,34 @@ def _get_object_width(obj: QObject) -> int:
     return 0
 
 
+def _get_object_height(obj: QObject) -> int:
+    if hasattr(obj, "height") and isinstance(obj.height, (int, float)):
+        return int(obj.height)
+    if hasattr(obj, "height") and callable(obj.height):
+        try:
+            return int(obj.height())
+        except Exception:
+            return 0
+    if hasattr(obj, "geometry"):
+        try:
+            return int(obj.geometry().height())
+        except Exception:
+            return 0
+    return 0
+
+
 def _event_x(event: QWheelEvent) -> float:
     try:
         return float(event.position().x())
     except AttributeError:
         return float(event.pos().x())
+
+
+def _event_y(event: QWheelEvent) -> float:
+    try:
+        return float(event.position().y())
+    except AttributeError:
+        return float(event.pos().y())
 
 
 def _is_bottom_web_target(obj: QObject) -> bool:
@@ -876,6 +899,9 @@ def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
     if config.get("wheel_ignore_scrollbar", True):
         width = _get_object_width(obj)
         if width > 0 and _event_x(event) > width - 30:
+            return False
+        height = _get_object_height(obj)
+        if height > 0 and _event_y(event) > height - 30:
             return False
 
     if (
