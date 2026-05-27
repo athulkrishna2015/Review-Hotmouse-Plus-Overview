@@ -1,7 +1,10 @@
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, no_type_check
 import datetime
 import json
+import os
 from pathlib import Path
+import sys
+import traceback
 
 from aqt import mw
 from aqt.qt import *
@@ -17,6 +20,38 @@ from .actions import (
 )
 
 config: Dict[str, Any] = {}
+
+
+def log_message(msg: str) -> None:
+    try:
+        addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        log_file = os.path.join(addon_dir, "hotmouse.log")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"[{timestamp}] {msg}\n")
+    except Exception:
+        pass
+
+
+_old_excepthook = sys.excepthook
+
+
+def custom_excepthook(exc_type, exc_value, exc_traceback):
+    try:
+        tb_lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        tb_str = "".join(tb_lines)
+        if "hotmouse" in tb_str.lower():
+            log_message(f"CRASH / UNHANDLED EXCEPTION:\n{tb_str}")
+    except Exception:
+        pass
+    if _old_excepthook:
+        _old_excepthook(exc_type, exc_value, exc_traceback)
+
+
+sys.excepthook = custom_excepthook
+
+# Log initialization
+log_message("Review Hotmouse Plus Overview manager loaded.")
 
 
 def set_config(new_config: Dict[str, Any]) -> None:
@@ -694,7 +729,11 @@ class HotmouseManager:
         prev_state = getattr(mw, "state", None)
         prev_enabled = self.enabled
         self.mark_next_undo_as_hotmouse(action_str)
-        ACTIONS[action_str]()
+        try:
+            ACTIONS[action_str]()
+        except Exception as e:
+            log_message(f"Exception during executing action '{action_str}' for hotkey '{hotkey_str}':\n{traceback.format_exc()}")
+            raise
         self.remember_last_hotmouse_action(action_str, prev_state, prev_enabled)
 
         return True
