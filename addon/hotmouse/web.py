@@ -190,6 +190,7 @@ def on_context_menu(
         _old(target, ev)
         return
     if manager.right_click_bound_in_current_scope():
+        manager.maybe_execute_right_click_from_context_menu()
         return None
     _old(target, ev)
 

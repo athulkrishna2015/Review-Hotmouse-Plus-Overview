@@ -56,6 +56,7 @@ class HotmouseManager:
         self._mid_drag_scroll_timer: Optional[QTimer] = None
         self._mid_drag_speed_x: float = 0.0
         self._mid_drag_speed_y: float = 0.0
+        self._last_right_click_action_time: Optional[datetime.datetime] = None
         self.refresh_shortcuts()
 
     def add_menu(self, conf_open: Callable[[], None]) -> None:
@@ -680,6 +681,9 @@ class HotmouseManager:
         if not action_str:
             return False
 
+        if "click_right" in hotkey_str:
+            self._last_right_click_action_time = datetime.datetime.now()
+
         if config.get("tooltip", False):
             tooltip(action_str)
 
@@ -694,6 +698,16 @@ class HotmouseManager:
         self.remember_last_hotmouse_action(action_str, prev_state, prev_enabled)
 
         return True
+
+    def maybe_execute_right_click_from_context_menu(self) -> bool:
+        curr_time = datetime.datetime.now()
+        if self._last_right_click_action_time is not None:
+            time_diff = (curr_time - self._last_right_click_action_time).total_seconds() * 1000
+            if time_diff < 200:
+                return False
+
+        hotkey_str = self.build_hotkey([], click=Button.right)
+        return self.execute_shortcut(hotkey_str)
 
     def on_mouse_press(self, event: QMouseEvent) -> bool:
         curr_time = datetime.datetime.now()
@@ -975,6 +989,7 @@ class HotmouseEventFilter(QObject):
 
         if event.type() == QEvent.Type.ContextMenu:
             if self.manager.right_click_bound_in_current_scope():
+                self.manager.maybe_execute_right_click_from_context_menu()
                 return True
 
         if (
