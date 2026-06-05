@@ -730,6 +730,7 @@ class HotmouseManager:
         self.mark_next_undo_as_hotmouse(action_str)
         try:
             ACTIONS[action_str]()
+            log_message(f"Executed action '{action_str}' via hotkey '{hotkey_str}' (state: {prev_state})")
         except Exception as e:
             log_message(f"Exception during executing action '{action_str}' for hotkey '{hotkey_str}':\n{traceback.format_exc()}")
             raise

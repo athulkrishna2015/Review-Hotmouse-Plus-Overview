@@ -7,6 +7,7 @@ from .config_tabs import (
     hotkey_tabs,
     support_tab,
     trackpad_tab,
+    logs_tab,
 )
 from .event import refresh_config
 
@@ -28,3 +29,4 @@ conf.add_config_tab(general_tab)
 conf.add_config_tab(hotkey_tabs)
 conf.add_config_tab(trackpad_tab)
 conf.add_config_tab(support_tab)
+conf.add_config_tab(logs_tab)

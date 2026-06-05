@@ -83,6 +83,21 @@ def check_show_support_on_update() -> None:
         QTimer.singleShot(1000, open_config_at_support)
 
 
+def maybe_clear_logs_on_startup() -> None:
+    try:
+        import os
+        import datetime
+        addon_package = mw.addonManager.addonFromModule(__name__)
+        config = mw.addonManager.getConfig(addon_package)
+        if config.get("clear_logs_on_startup", True):
+            addon_dir = os.path.dirname(os.path.abspath(__file__))
+            log_file = os.path.join(addon_dir, "hotmouse.log")
+            with open(log_file, "w", encoding="utf-8") as f:
+                f.write(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Review Hotmouse Plus Overview manager loaded (logs cleared on startup).\n")
+    except Exception:
+        pass
+
+
 def install_event_handlers() -> None:
     manager.add_menu(config_module.conf.open_config)
     for target in hm_web.WEBVIEW_TARGETS():
@@ -96,6 +111,9 @@ def install_event_handlers() -> None:
         AnkiWebView.contextMenuEvent = hm_web.on_context_menu
 
     check_show_support_on_update()
+    
+    from aqt.qt import QTimer
+    QTimer.singleShot(500, maybe_clear_logs_on_startup)
 
 
 mw.addonManager.setWebExports(__name__, r"web/.*\.(css|js)")

@@ -2,6 +2,7 @@ from .general import general_tab
 from .tab_support import support_tab
 from .hotkeys import HotkeyTabManager, hotkey_tabs
 from .trackpad import apply_trackpad_actions, get_trackpad_action, trackpad_tab
+from .logs import logs_tab
 
 __all__ = [
     "HotkeyTabManager",
@@ -11,4 +12,5 @@ __all__ = [
     "hotkey_tabs",
     "support_tab",
     "trackpad_tab",
+    "logs_tab",
 ]
