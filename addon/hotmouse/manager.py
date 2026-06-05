@@ -345,8 +345,7 @@ class HotmouseManager:
                     and isinstance(undo_text, str)
                     and undo_text != expected_text
                 ):
-                    self._mouse_undo_history.pop()
-                    continue
+                    return False
 
                 self._mouse_undo_history.pop()
                 self._clear_global_undo_arm()
