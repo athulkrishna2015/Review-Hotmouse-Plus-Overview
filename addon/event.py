@@ -46,8 +46,17 @@ def check_show_support_on_update() -> None:
     if meta.get("supporter_opt_out", False):
         return
 
-    manifest = mw.addonManager.addon_manifest(addon_package)
-    current_version = manifest.get("version", "0.0.0")
+    try:
+        import json
+        import os
+        addon_dir = os.path.dirname(os.path.abspath(__file__))
+        manifest_path = os.path.join(addon_dir, "manifest.json")
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            manifest = json.load(f)
+        current_version = manifest.get("version", "0.0.0")
+    except Exception:
+        current_version = "0.0.0"
+
     last_version = meta.get("last_showed_support_version", "")
 
     if last_version != current_version:
