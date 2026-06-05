@@ -116,12 +116,20 @@ class ConfigManager:
     # Config Window
 
     def open_config(self) -> bool:
+        if self.config_window is not None:
+            try:
+                self.config_window.show()
+                self.config_window.activateWindow()
+                self.config_window.raise_()
+                return True
+            except Exception:
+                pass
         config_window = ConfigWindow(self)
         self.config_window = config_window
         for fn in self.window_open_hook:
             fn(config_window)
         config_window.on_open()
-        config_window.exec()
+        config_window.show()
         return True
 
     def use_custom_window(self) -> None:

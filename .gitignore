@@ -1,5 +1,7 @@
 # Anki related
 meta.json
+addon/hotmouse.log
+.antigravitycli/
 
 run
 /venv

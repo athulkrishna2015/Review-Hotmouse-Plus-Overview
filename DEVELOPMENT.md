@@ -14,17 +14,23 @@ This repository contains the source code for the **Review Hotmouse Plus Overview
 ## Project Structure
 
 - `addon/`: The core add-on code that gets bundled into the `.ankiaddon` file.
-  - `ankiaddonconfig/`: A library for managing the GUI configuration window.
+  - `ankiaddonconfig/`: A library for managing the GUI configuration window (non-modal to allow using Anki while open).
   - `compat/`: Handles compatibility migrations for users upgrading from older versions.
+  - `config_tabs/`: Sub-modules representing individual tabs in the configuration GUI:
+    - `general.py`: Main settings like smart scrolling.
+    - `hotkeys.py`: Keyboard and mouse mapping configurations.
+    - `trackpad.py`: Gesture configurations.
+    - `tab_support.py`: QR code payment/donation support options.
+    - `logs.py`: Real-time viewing of action logs.
   - `web/`: JavaScript files (e.g., `detect_wheel.js`) injected into Anki webviews.
   - `Support/`: QR codes and assets for the Support tab.
   - `event.py`: The heart of the add-on; handles mouse events, shortcuts, and menu integration.
-  - `config.py`: Defines the configuration tabs (General, Hotkeys, Support).
-  - `VERSION`: Plain text file containing the current version (e.g., `2.8`).
+  - `config.py`: Registers and initializes the config tabs.
+  - `hotmouse.log`: Log file where all hotmouse actions are written in real-time.
+  - `VERSION`: Plain text file containing the current version (e.g., `3.3.0`).
 - `tests/`: Unit tests for configuration and compatibility logic.
-- `make_ankiaddon.py`: Build script that auto-bumps the version and creates the `.ankiaddon` package.
-- `new_version.py`: Utility script to sync version numbers across `manifest.json` and `VERSION`.
-- `bump.py`: Standalone script to increment the minor version number.
+- `make_ankiaddon.py`: Build script that bundles files (respecting `.gitignore`) and creates the `.ankiaddon` package.
+- `bump.py`: Utility script to bump version (major, minor, patch) or set an explicit version (e.g. `python bump.py --set 3.3.0`).
 
 ---
 
@@ -43,7 +49,11 @@ ln -s "$(pwd)/addon" ~/.local/share/Anki2/addons21/review_hotmouse_plus_overview
 New-Item -ItemType SymbolicLink -Path "$env:APPDATA\Anki2\addons21\review_hotmouse_plus_overview_dev" -Target "$pwd\addon"
 ```
 
-### 2. Building and Releasing
+### 2. Debugging and Logging
+- **Real-Time Logs**: When actions are executed via Hotmouse, they are appended in real-time to `addon/hotmouse.log`. You can tail this file during development or view it in the **Logs** tab of the configuration window.
+- **Non-blocking GUI Settings**: The configuration window behaves non-modally, allowing you to trigger mouse wheel and right-click events in the reviewer and see updates in the Logs tab live without needing to close the configuration panel first.
+
+### 3. Building and Releasing
 
 This repository uses **GitHub Actions** to automate builds:
 

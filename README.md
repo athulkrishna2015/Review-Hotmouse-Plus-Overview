@@ -58,6 +58,14 @@ If you find this add-on useful, please consider supporting its development:
 
 # Changelog
 
+## v3.3.0 (2026-06-05)
+
+- **Non-modal Config Window**: The addon config panel is now non-modal and non-blocking, meaning you can fully use and interact with Anki while keeping the configuration options open.
+- **Live Action Logs Tab**: Added a new "Logs" config tab displaying a live stream of executed Hotmouse actions, featuring "Copy" and "Clear" button controls and a setting to clear logs automatically on startup (runs asynchronously 500ms after boot to avoid disturbing Anki's startup process).
+- **Unrecognized Undo Fallback**: Prevents rating history eviction and deck overview screen kickbacks when external addon database transactions (e.g., from AI-Hints) are encountered on the undo stack. Unrecognized undos now gracefully fallback to global undo (`Ctrl+Z`).
+- **Robust Context Menu Undo**: Added context menu event filter fallback for mouse right-click actions with a 200ms deduplication window, ensuring right-click undo functions reliably even on dynamic webview panels.
+- **Support tab & Autostart Welcomer**: Automatically displays the Support tab welcome screen exactly one time after each addon update (respecting donation opt-out metadata). Replaced fragile `addon_manifest` APIs with safe JSON parsing to prevent startup crashes on older Anki versions.
+
 ## 2026-04-21
 
 - **Horizontal Scrollbar Exclusion**: Moving the mouse over the bottom horizontal scrollbar will now correctly allow native horizontal scrolling without triggering add-on actions, matching the existing behavior for vertical scrollbars.

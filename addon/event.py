@@ -77,7 +77,7 @@ def check_show_support_on_update() -> None:
                     tab_widget.setCurrentIndex(i)
                     break
 
-            config_window.exec()
+            config_window.show()
 
         from aqt.qt import QTimer
         QTimer.singleShot(1000, open_config_at_support)
