@@ -40,6 +40,40 @@ def toggle_on_off() -> None:
     actions.toggle_on_off()
 
 
+def check_show_support_on_update() -> None:
+    addon_package = mw.addonManager.addonFromModule(__name__)
+    meta = mw.addonManager.addonMeta(addon_package)
+    if meta.get("supporter_opt_out", False):
+        return
+
+    manifest = mw.addonManager.addon_manifest(addon_package)
+    current_version = manifest.get("version", "0.0.0")
+    last_version = meta.get("last_showed_support_version", "")
+
+    if last_version != current_version:
+        meta["last_showed_support_version"] = current_version
+        mw.addonManager.writeAddonMeta(addon_package, meta)
+
+        def open_config_at_support():
+            from .ankiaddonconfig import ConfigWindow
+            config_window = ConfigWindow(config_module.conf)
+            config_module.conf.config_window = config_window
+            for fn in config_module.conf.window_open_hook:
+                fn(config_window)
+            config_window.on_open()
+
+            tab_widget = config_window.main_tab
+            for i in range(tab_widget.count()):
+                if tab_widget.tabText(i) == "Support":
+                    tab_widget.setCurrentIndex(i)
+                    break
+
+            config_window.exec()
+
+        from aqt.qt import QTimer
+        QTimer.singleShot(1000, open_config_at_support)
+
+
 def install_event_handlers() -> None:
     manager.add_menu(config_module.conf.open_config)
     for target in hm_web.WEBVIEW_TARGETS():
@@ -51,6 +85,8 @@ def install_event_handlers() -> None:
         )
     else:
         AnkiWebView.contextMenuEvent = hm_web.on_context_menu
+
+    check_show_support_on_update()
 
 
 mw.addonManager.setWebExports(__name__, r"web/.*\.(css|js)")

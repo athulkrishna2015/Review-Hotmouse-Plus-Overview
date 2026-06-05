@@ -1,5 +1,5 @@
 from .general import general_tab
-from .support import support_tab
+from .tab_support import support_tab
 from .hotkeys import HotkeyTabManager, hotkey_tabs
 from .trackpad import apply_trackpad_actions, get_trackpad_action, trackpad_tab
 
