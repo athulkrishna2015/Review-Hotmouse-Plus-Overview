@@ -58,6 +58,14 @@ If you find this add-on useful, please consider supporting its development:
 
 # Changelog
 
+## v3.3.1 (2026-06-09)
+
+- **Standard Context Menu on Selection**: Right-clicking now allows the standard context menu when text is selected, enabling easy copying from the review screen or AI hints section.
+- **Performance Optimizations**:
+    - **Async Logging**: Action logging moved to a background thread to prevent UI freezes on slow filesystems (e.g., portable drives).
+    - **Reduced Latency**: Removed/reduced several hardcoded cooldowns and latches that were causing noticeable delays between subsequent mouse actions.
+    - **Instant Wheel Reset**: The mouse wheel latch now resets instantly whenever the study state changes (e.g., card flipped or answered), allowing for much faster rapid-fire reviews.
+
 ## v3.3.0 (2026-06-05)
 
 - **Non-modal Config Window**: The addon config panel is now non-modal and non-blocking, meaning you can fully use and interact with Anki while keeping the configuration options open.

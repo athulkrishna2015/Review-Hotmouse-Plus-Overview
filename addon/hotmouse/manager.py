@@ -22,13 +22,39 @@ from .actions import (
 config: Dict[str, Any] = {}
 
 
+import queue
+import threading
+
+_log_queue: queue.Queue = queue.Queue()
+
+
+def _logger_thread_worker() -> None:
+    while True:
+        try:
+            msg = _log_queue.get()
+            if msg is None:
+                break
+            
+            addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            log_file = os.path.join(addon_dir, "hotmouse.log")
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            with open(log_file, "a", encoding="utf-8") as f:
+                f.write(f"[{timestamp}] {msg}\n")
+            
+            _log_queue.task_done()
+        except Exception:
+            # Silent fail in logger thread
+            pass
+
+
+_log_thread = threading.Thread(target=_logger_thread_worker, daemon=True)
+_log_thread.start()
+
+
 def log_message(msg: str) -> None:
     try:
-        addon_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        log_file = os.path.join(addon_dir, "hotmouse.log")
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(log_file, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {msg}\n")
+        _log_queue.put(msg)
     except Exception:
         pass
 
@@ -510,6 +536,12 @@ class HotmouseManager:
         current_step = self._current_undo_step()
         self._prune_mouse_undo_history(current_step)
 
+        # Reset latch and accumulator when study state changes (e.g. card answered)
+        # This allows instant subsequent actions for power users.
+        self._wheel_action_latched = False
+        self._wheel_action_dir = None
+        self._wheel_accumulator = 0
+
         if self._track_hotmouse_undo_next:
             tracked_action = self._track_hotmouse_action
             self._track_hotmouse_undo_next = False
@@ -742,11 +774,23 @@ class HotmouseManager:
         curr_time = datetime.datetime.now()
         if self._last_right_click_action_time is not None:
             time_diff = (curr_time - self._last_right_click_action_time).total_seconds() * 1000
-            if time_diff < 200:
+            if time_diff < 100:
                 return False
 
         hotkey_str = self.build_hotkey([], click=Button.right)
         return self.execute_shortcut(hotkey_str)
+
+    def _has_any_selection(self) -> bool:
+        try:
+            # Check main webview and bottom webview (rating bar/AI hints)
+            for wv in (mw.web, getattr(mw, "bottomWeb", None)):
+                if wv and hasattr(wv, "page"):
+                    page = wv.page()
+                    if page and page.hasSelection():
+                        return True
+        except Exception:
+            pass
+        return False
 
     def on_mouse_press(self, event: QMouseEvent) -> bool:
         curr_time = datetime.datetime.now()
@@ -756,7 +800,8 @@ class HotmouseManager:
         if click_threshold_ms > 0 and time_diff.total_seconds() * 1000 < click_threshold_ms:
             return self.enabled
 
-        self.last_click_time = curr_time
+        if event.button() == Qt.MouseButton.RightButton and self._has_any_selection():
+            return False
 
         btns = self.get_pressed_buttons(event.buttons())
         btn = event.button()
@@ -769,7 +814,10 @@ class HotmouseManager:
             return False
 
         hotkey_str = self.build_hotkey(btns, click=pressed)
-        return self.execute_shortcut(hotkey_str)
+        executed = self.execute_shortcut(hotkey_str)
+        if executed:
+            self.last_click_time = curr_time
+        return executed
 
     def on_mouse_scroll(self, event: QWheelEvent) -> bool:
         invert_x = config.get("natural_scrolling", True)
@@ -785,7 +833,7 @@ class HotmouseManager:
         time_diff = (curr_time - self.last_scroll_time).total_seconds() * 1000
 
         if self._wheel_action_latched:
-            if wheel_dir != self._wheel_action_dir or time_diff > 500:
+            if wheel_dir != self._wheel_action_dir or time_diff > 200:
                 self._wheel_action_latched = False
                 self._wheel_action_dir = None
                 self._wheel_accumulator = 0
@@ -1028,6 +1076,8 @@ class HotmouseEventFilter(QObject):
 
         if event.type() == QEvent.Type.ContextMenu:
             if self.manager.right_click_bound_in_current_scope():
+                if self.manager._has_any_selection():
+                    return False
                 self.manager.maybe_execute_right_click_from_context_menu()
                 return True
 

@@ -189,6 +189,15 @@ def on_context_menu(
     if target not in WEBVIEW_TARGETS():
         _old(target, ev)
         return
+
+    # Allow context menu if text is selected
+    try:
+        if target.page().hasSelection():
+            _old(target, ev)
+            return
+    except Exception:
+        pass
+
     if manager.right_click_bound_in_current_scope():
         manager.maybe_execute_right_click_from_context_menu()
         return None
