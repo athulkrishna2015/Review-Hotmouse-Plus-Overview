@@ -93,6 +93,7 @@ class HotmouseManager:
         self.last_scroll_time = datetime.datetime.now()
         self.last_click_time = datetime.datetime.now()
         self.last_state_change_time: Optional[datetime.datetime] = None
+        self.last_wheel_was_momentum = False
         self._suspend_reasons: Set[str] = set()
         self._suspend_prev_enabled: bool = False
         self._track_hotmouse_undo_next: bool = False
@@ -775,6 +776,7 @@ class HotmouseManager:
         self.mark_next_undo_as_hotmouse(action_str)
         try:
             ACTIONS[action_str]()
+            self.last_state_change_time = datetime.datetime.now()
             log_message(f"Executed action '{action_str}' via hotkey '{hotkey_str}' (state: {prev_state})")
         except Exception as e:
             log_message(f"Exception during executing action '{action_str}' for hotkey '{hotkey_str}':\n{traceback.format_exc()}")
@@ -833,6 +835,22 @@ class HotmouseManager:
         return executed
 
     def on_mouse_scroll(self, event: QWheelEvent) -> bool:
+        if hasattr(event, "phase"):
+            try:
+                phase = event.phase()
+                is_momentum = False
+                if hasattr(Qt, "ScrollPhase") and hasattr(Qt.ScrollPhase, "ScrollMomentum"):
+                    is_momentum = (phase == Qt.ScrollPhase.ScrollMomentum)
+                elif hasattr(Qt, "ScrollMomentum"):
+                    is_momentum = (phase == Qt.ScrollMomentum)
+                else:
+                    is_momentum = (int(phase) == 4)
+                self.last_wheel_was_momentum = is_momentum
+                if is_momentum:
+                    return self.enabled
+            except Exception:
+                pass
+
         invert_x = config.get("natural_scrolling", True)
         wheel_dir, delta = WheelDir.from_qt(event.angleDelta(), invert_x=invert_x)
         if wheel_dir is None:
@@ -844,6 +862,10 @@ class HotmouseManager:
     ) -> bool:
         curr_time = datetime.datetime.now()
         
+        if getattr(self, "last_wheel_was_momentum", False):
+            self._wheel_accumulator = 0.0
+            return self.enabled
+
         cooldown = config.get("state_change_cooldown_ms", 250)
         if self.last_state_change_time is not None:
             time_since_state_change = (curr_time - self.last_state_change_time).total_seconds() * 1000
@@ -1050,6 +1072,21 @@ class HotmouseEventFilter(QObject):
         # deck browser, and other Anki windows.
         if getattr(mw, "state", None) not in ("review", "overview"):
             return False
+
+        if event.type() == QEvent.Type.Wheel and isinstance(event, QWheelEvent):
+            if hasattr(event, "phase"):
+                try:
+                    phase = event.phase()
+                    is_momentum = False
+                    if hasattr(Qt, "ScrollPhase") and hasattr(Qt.ScrollPhase, "ScrollMomentum"):
+                        is_momentum = (phase == Qt.ScrollPhase.ScrollMomentum)
+                    elif hasattr(Qt, "ScrollMomentum"):
+                        is_momentum = (phase == Qt.ScrollMomentum)
+                    else:
+                        is_momentum = (int(phase) == 4)
+                    self.manager.last_wheel_was_momentum = is_momentum
+                except Exception:
+                    pass
         if config.get("middle_click_scroll", True):
             if event.type() == QEvent.Type.MouseButtonPress:
                 if (
