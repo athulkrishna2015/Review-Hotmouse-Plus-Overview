@@ -129,3 +129,6 @@ gui_hooks.webview_will_set_content.append(hm_web.inject_web_content)
 gui_hooks.webview_did_receive_js_message.append(hm_web.handle_js_message)
 if hasattr(gui_hooks, "undo_state_did_change"):
     gui_hooks.undo_state_did_change.append(manager.on_undo_state_did_change)
+gui_hooks.reviewer_did_show_question.append(manager.on_reviewer_did_show_question)
+gui_hooks.reviewer_did_show_answer.append(manager.on_reviewer_did_show_answer)
+

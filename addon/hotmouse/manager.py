@@ -92,6 +92,7 @@ class HotmouseManager:
         self.enabled = config.get("default_enabled", True)
         self.last_scroll_time = datetime.datetime.now()
         self.last_click_time = datetime.datetime.now()
+        self.last_state_change_time: Optional[datetime.datetime] = None
         self._suspend_reasons: Set[str] = set()
         self._suspend_prev_enabled: bool = False
         self._track_hotmouse_undo_next: bool = False
@@ -530,6 +531,18 @@ class HotmouseManager:
                 action_str, prev_state, prev_enabled, card_id
             )
 
+    def on_reviewer_did_show_question(self, reviewer: Any) -> None:
+        self.last_state_change_time = datetime.datetime.now()
+        self._wheel_accumulator = 0.0
+        self._wheel_action_latched = False
+        self._wheel_action_dir = None
+
+    def on_reviewer_did_show_answer(self, reviewer: Any) -> None:
+        self.last_state_change_time = datetime.datetime.now()
+        self._wheel_accumulator = 0.0
+        self._wheel_action_latched = False
+        self._wheel_action_dir = None
+
     def on_undo_state_did_change(self, info: Any) -> None:
         undo_text = getattr(info, "undo_text", None)
         can_undo = bool(getattr(info, "can_undo", False))
@@ -830,6 +843,14 @@ class HotmouseManager:
         self, wheel_dir: WheelDir, delta: float, qbtns: "Qt.MouseButton"
     ) -> bool:
         curr_time = datetime.datetime.now()
+        
+        cooldown = config.get("state_change_cooldown_ms", 250)
+        if self.last_state_change_time is not None:
+            time_since_state_change = (curr_time - self.last_state_change_time).total_seconds() * 1000
+            if time_since_state_change < cooldown:
+                self._wheel_accumulator = 0.0
+                return self.enabled
+
         time_diff = (curr_time - self.last_scroll_time).total_seconds() * 1000
 
         if self._wheel_action_latched:

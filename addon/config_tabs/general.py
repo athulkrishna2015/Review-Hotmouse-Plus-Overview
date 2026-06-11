@@ -14,6 +14,14 @@ def general_tab(conf_window: ConfigWindow) -> None:
     )
 
     tab.number_input(
+        "state_change_cooldown_ms",
+        "State change cooldown (ms)",
+        tooltip="Ignore scroll events for this long after a card question or answer is shown to prevent double-triggering with trackpad inertia.",
+        maximum=2000,
+        minimum=0,
+    )
+
+    tab.number_input(
         "threshold_click_ms",
         "Mouse click threshold (1000 is 1s)",
         tooltip="How long a delay between subsequent click actions? Set to 0 for no delay (instant response).",

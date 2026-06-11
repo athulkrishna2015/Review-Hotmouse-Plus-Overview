@@ -33,5 +33,6 @@
     "smart_scroll": false,
     "natural_scrolling": true,
     "scroll_accumulation_threshold": 60,
+    "state_change_cooldown_ms": 250,
     "clear_logs_on_startup": true
 }
