@@ -121,6 +121,13 @@ class ConfigManager:
                 self.config_window.show()
                 self.config_window.activateWindow()
                 self.config_window.raise_()
+                try:
+                    import aqt
+                    addons_dialog = aqt.dialogs.active("AddonsDialog")
+                    if addons_dialog:
+                        addons_dialog.close()
+                except Exception:
+                    pass
                 return True
             except Exception:
                 pass
@@ -130,6 +137,13 @@ class ConfigManager:
             fn(config_window)
         config_window.on_open()
         config_window.show()
+        try:
+            import aqt
+            addons_dialog = aqt.dialogs.active("AddonsDialog")
+            if addons_dialog:
+                addons_dialog.close()
+        except Exception:
+            pass
         return True
 
     def use_custom_window(self) -> None:

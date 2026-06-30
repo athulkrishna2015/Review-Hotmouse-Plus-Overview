@@ -53,6 +53,22 @@ def general_tab(conf_window: ConfigWindow) -> None:
         "Allow normal scrolling when the mouse is over the side scroll bar area.",
     )
 
+    tab.number_input(
+        "wheel_edge_padding_left",
+        "Left edge scroll padding (pixels)",
+        tooltip="Allow normal scrolling when the mouse is close to the left edge of Anki.",
+        minimum=0,
+        maximum=500,
+    )
+
+    tab.number_input(
+        "wheel_edge_padding_right",
+        "Right edge scroll padding (pixels)",
+        tooltip="Allow normal scrolling when the mouse is close to the right edge of Anki.",
+        minimum=0,
+        maximum=500,
+    )
+
     tab.checkbox(
         "wheel_only_on_bottom_bar",
         "Wheel hotkeys only on bottom bar",

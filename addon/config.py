@@ -19,6 +19,7 @@ __all__ = [
 
 
 def on_window_open(conf_window: "ConfigWindow") -> None:
+    conf_window.execute_on_save(refresh_config)
     conf_window.execute_on_close(refresh_config)
 
 

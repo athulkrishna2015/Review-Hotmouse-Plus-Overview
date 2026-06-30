@@ -34,6 +34,16 @@ document.addEventListener("wheel", (ev) => {
 
     const cfg = window._hotmouse_config || {};
 
+    const leftPadding = cfg.wheel_edge_padding_left !== undefined ? cfg.wheel_edge_padding_left : 20;
+    const rightPadding = cfg.wheel_edge_padding_right !== undefined ? cfg.wheel_edge_padding_right : 20;
+    const defaultRight = cfg.wheel_ignore_scrollbar ? 30 : 0;
+    const finalRightPadding = Math.max(rightPadding, defaultRight);
+    const clientWidth = document.documentElement.clientWidth;
+
+    if ((leftPadding > 0 && ev.clientX < leftPadding) || (finalRightPadding > 0 && ev.clientX > clientWidth - finalRightPadding)) {
+        return;
+    }
+
     // If the addon is disabled (e.g. double-click toggle), let the page
     // scroll normally — don't preventDefault or send pycmd.
     if (window._hotmouse_enabled === false) return;

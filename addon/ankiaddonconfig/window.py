@@ -16,8 +16,15 @@ QT6 = QT_VERSION_STR.split(".")[0] == "6"
 
 class ConfigWindow(QDialog):
     def __init__(self, conf: "ConfigManager") -> None:
-        QDialog.__init__(self, mw, Qt.WindowType.Window)  # type: ignore
+        QDialog.__init__(
+            self,
+            mw,
+            Qt.WindowType.Window
+            | Qt.WindowType.WindowMinMaxButtonsHint
+            | Qt.WindowType.WindowCloseButtonHint,
+        )  # type: ignore
         self.setModal(False)
+        self.setSizeGripEnabled(True)
         self.conf = conf
         self.mgr = mw.addonManager
         self.widget_updates: List[Callable[[], None]] = []
@@ -59,10 +66,14 @@ class ConfigWindow(QDialog):
         btn_box.addWidget(self.cancel_btn)
 
         self.save_btn = QPushButton("Save")
-        self.save_btn.setDefault(True)
-        self.save_btn.setShortcut("Ctrl+Return")
-        self.save_btn.clicked.connect(self.on_save)
+        self.save_btn.clicked.connect(self.on_save_only)
         btn_box.addWidget(self.save_btn)
+
+        self.save_close_btn = QPushButton("Save & Close")
+        self.save_close_btn.setDefault(True)
+        self.save_close_btn.setShortcut("Ctrl+Return")
+        self.save_close_btn.clicked.connect(self.on_save)
+        btn_box.addWidget(self.save_close_btn)
 
     def update_widgets(self) -> None:
         try:
@@ -94,6 +105,15 @@ class ConfigWindow(QDialog):
     def on_open(self) -> None:
         self.update_widgets()
         restoreGeom(self, self.geom_key)
+
+    def on_save_only(self) -> None:
+        for hook in self.should_save_hook:
+            if not hook():
+                return
+        for hook in self._on_save_hook:
+            hook()
+        self.conf.save()
+        tooltip("Configuration saved.")
 
     def on_save(self) -> None:
         for hook in self.should_save_hook:
@@ -141,8 +161,23 @@ class ConfigWindow(QDialog):
 
     def add_tab(self, name: str) -> "ConfigLayout":
         tab = QWidget(self)
+        main_layout = QBoxLayout(QBoxLayout.Direction.TopToBottom)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea(tab)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        inner_widget = QWidget()
         layout = ConfigLayout(self, QBoxLayout.Direction.TopToBottom)
-        tab.setLayout(layout)
+        inner_widget.setLayout(layout)
+
+        scroll.setWidget(inner_widget)
+        main_layout.addWidget(scroll)
+        tab.setLayout(main_layout)
+
         self.main_tab.addTab(tab, name)
         return layout
 

@@ -49,6 +49,8 @@ def get_and_remove_v1_shortcuts_from_config() -> Dict[str, str]:
         "z_debug",
         "undo_whitelist",
         "shortcuts",
+        "wheel_edge_padding_left",
+        "wheel_edge_padding_right",
     ]
 
     for key in config:

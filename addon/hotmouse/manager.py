@@ -1034,18 +1034,44 @@ def _is_bottom_web_target(obj: QObject) -> bool:
     return False
 
 
+def _event_global_pos(event: QWheelEvent) -> QPoint:
+    try:
+        return event.globalPosition().toPoint()
+    except AttributeError:
+        return event.globalPos()
+
+
 def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
     if getattr(mw, "state", None) not in ("review", "overview"):
         return False
     if config.get("smart_scroll", False) and getattr(mw, "state", None) != "overview":
         return False
 
-    if config.get("wheel_ignore_scrollbar", True):
+    try:
+        gpos = _event_global_pos(event)
+        pos_rel = mw.web.mapFromGlobal(gpos)
+        x = pos_rel.x()
+        y = pos_rel.y()
+        width = mw.web.width()
+        height = mw.web.height()
+    except Exception:
+        x = _event_x(event)
+        y = _event_y(event)
         width = _get_object_width(obj)
-        if width > 0 and _event_x(event) > width - 30:
-            return False
         height = _get_object_height(obj)
-        if height > 0 and _event_y(event) > height - 30:
+
+    left_padding = config.get("wheel_edge_padding_left", 20)
+    right_padding = config.get("wheel_edge_padding_right", 20)
+
+    if left_padding > 0 and x < left_padding:
+        return False
+    if width > 0 and right_padding > 0 and x > width - right_padding:
+        return False
+
+    if config.get("wheel_ignore_scrollbar", True):
+        if width > 0 and x > width - 30:
+            return False
+        if height > 0 and y > height - 30:
             return False
 
     if (
