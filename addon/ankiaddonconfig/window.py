@@ -30,6 +30,7 @@ class ConfigWindow(QDialog):
         self.widget_updates: List[Callable[[], None]] = []
         self.should_save_hook: List[Callable[[], bool]] = []
         self._on_save_hook: List[Callable[[], None]] = []
+        self._on_saved_hook: List[Callable[[], None]] = []
         self._on_close_hook: List[Callable[[], None]] = []
         self.geom_key = f"addonconfig-{conf.addon_name}"
 
@@ -113,6 +114,8 @@ class ConfigWindow(QDialog):
         for hook in self._on_save_hook:
             hook()
         self.conf.save()
+        for hook in self._on_saved_hook:
+            hook()
         tooltip("Configuration saved.")
 
     def on_save(self) -> None:
@@ -122,6 +125,8 @@ class ConfigWindow(QDialog):
         for hook in self._on_save_hook:
             hook()
         self.conf.save()
+        for hook in self._on_saved_hook:
+            hook()
         self.close()
 
     def on_cancel(self) -> None:
@@ -183,6 +188,9 @@ class ConfigWindow(QDialog):
 
     def execute_on_save(self, hook: Callable[[], None]) -> None:
         self._on_save_hook.append(hook)
+
+    def execute_on_saved(self, hook: Callable[[], None]) -> None:
+        self._on_saved_hook.append(hook)
 
     def execute_on_close(self, hook: Callable[[], None]) -> None:
         self._on_close_hook.append(hook)

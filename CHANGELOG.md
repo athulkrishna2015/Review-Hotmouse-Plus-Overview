@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## v3.5.0 (2026-08-15)
 
 - **Natural scrolling (invert vertical swipe)**: Added a new `natural_scrolling_vertical` config option. When enabled, flips the up/down swipe direction so it matches physical finger movement on trackpads with natural scrolling for the vertical axis. Disabled by default.
+- **Immediate settings application**: Configuration changes now refresh the running addon after the configuration is written, so both **Save** and **Save & Close** apply settings immediately. Closing the window is no longer required for changes to take effect.
 
 ## v3.4.0 (2026-06-30)
 
