@@ -852,7 +852,8 @@ class HotmouseManager:
                 pass
 
         invert_x = config.get("natural_scrolling", True)
-        wheel_dir, delta = WheelDir.from_qt(event.angleDelta(), invert_x=invert_x)
+        invert_y = config.get("natural_scrolling_vertical", False)
+        wheel_dir, delta = WheelDir.from_qt(event.angleDelta(), invert_x=invert_x, invert_y=invert_y)
         if wheel_dir is None:
             return False
         return self.handle_scroll(wheel_dir, delta, event.buttons())

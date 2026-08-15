@@ -175,6 +175,9 @@ document.addEventListener("wheel", (ev) => {
     if (cfg.natural_scrolling !== false) {
         dx = -dx;
     }
+    if (cfg.natural_scrolling_vertical === true) {
+        dy = -dy;
+    }
     let wheelDir = null;
     if (Math.abs(dy) >= Math.abs(dx) && dy !== 0) {
         wheelDir = dy > 0 ? "down" : "up";

@@ -88,6 +88,13 @@ def general_tab(conf_window: ConfigWindow) -> None:
         "Flips the left/right swipe direction so it matches your finger movement.",
     )
 
+    tab.checkbox(
+        "natural_scrolling_vertical",
+        "Natural scrolling (invert vertical swipe)",
+        "Enable if your trackpad uses natural (reverse) scrolling for vertical. "
+        "Flips the up/down swipe direction so it matches your finger movement.",
+    )
+
     global_undo_cb = tab.checkbox(
         "right_click_global_undo",
         "Right-click undo can use global undo",

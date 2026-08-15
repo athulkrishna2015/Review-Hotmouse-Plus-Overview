@@ -131,13 +131,13 @@ class WheelDir(Enum):
 
     @classmethod
     def from_qt(
-        cls, angle_delta: QPoint, invert_x: bool = True
+        cls, angle_delta: QPoint, invert_x: bool = True, invert_y: bool = False
     ) -> Tuple[Optional["WheelDir"], int]:
         # When invert_x is True (natural scrolling), negate deltaX so that
         # LEFT/RIGHT match the physical swipe direction rather than the
         # scroll direction.
         dx = -angle_delta.x() if invert_x else angle_delta.x()
-        dy = angle_delta.y()
+        dy = -angle_delta.y() if invert_y else angle_delta.y()
         if abs(dy) >= abs(dx) and dy != 0:
             return (cls.UP if dy > 0 else cls.DOWN), dy
         elif abs(dx) > abs(dy) and dx != 0:
@@ -146,11 +146,14 @@ class WheelDir(Enum):
 
     @classmethod
     def from_web(
-        cls, dx: float, dy: float, invert_x: bool = True
+        cls, dx: float, dy: float, invert_x: bool = True, invert_y: bool = False
     ) -> Tuple[Optional["WheelDir"], float]:
         # When invert_x is True (natural scrolling), negate deltaX.
         if invert_x:
             dx = -dx
+        # When invert_y is True (natural vertical scrolling), negate deltaY.
+        if invert_y:
+            dy = -dy
         if abs(dy) >= abs(dx) and dy != 0:
             return (cls.DOWN if dy > 0 else cls.UP), dy
         elif abs(dx) > abs(dy) and dx != 0:

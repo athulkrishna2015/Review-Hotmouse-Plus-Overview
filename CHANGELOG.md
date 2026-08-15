@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Natural scrolling (invert vertical swipe)**: Added a new `natural_scrolling_vertical` config option. When enabled, flips the up/down swipe direction so it matches physical finger movement on trackpads with natural scrolling for the vertical axis. Disabled by default.
+
 ## v3.4.0 (2026-06-30)
 
 - **Config Window Resizing**: Fixed the vertical height lock on the configuration GUI by wrapping General and Hotkey tabs inside a scrollable view. Users can now resize the config window to any height, and standard minimize/maximize buttons have been enabled.

@@ -19,6 +19,7 @@ Open Tools -> Add-ons -> Review Hotmouse Plus Overview -> Config and use the tab
     - **Wheel/Trackpad distance threshold**: Amount of "scroll distance" accumulated before a hotkey fires. Lower values make trackpad swipes more sensitive. Default is **60**; **120** matches the older wheel sensitivity.
     - **Horizontal Trackpad Swipes**: Support for swiping left/right on trackpads (horizontal scroll). Configurable just like vertical scroll. Default mapping: **Swipe Left = Hard**, **Swipe Right = Easy** during the answer phase.
     - **Natural scrolling (invert horizontal swipe)**: Enable if your trackpad uses natural (reverse) scrolling. Flips the left/right swipe direction so it matches your finger movement. Enabled by default.
+    - **Natural scrolling (invert vertical swipe)**: Enable if your trackpad uses natural (reverse) scrolling for vertical. Flips the up/down swipe direction so it matches your finger movement. Disabled by default.
     - **Ignore wheel on side scroll bar**: If enabled, allows normal scrolling when the mouse is over the side scrollbar area. Enabled by default.
     - **Left/Right edge scroll padding**: Number of pixels from the left and right edges of the Anki window where normal scrolling is allowed and hotkeys are not intercepted. Default **20px** each.
     - **Wheel hotkeys only on bottom bar**: If enabled, mouse wheel actions only trigger hotkeys when the pointer is over the bottom rating bar, allowing normal scrolling everywhere else. Disabled by default.

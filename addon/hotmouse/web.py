@@ -105,6 +105,7 @@ def inject_web_content(web_content: WebContent, context: Optional[Any]) -> None:
         f"wheel_only_on_bottom_bar: {str(config.get('wheel_only_on_bottom_bar', False)).lower()},"
         f"smart_scroll: {str(smart_scroll_enabled).lower()},"
         f"natural_scrolling: {str(config.get('natural_scrolling', True)).lower()},"
+        f"natural_scrolling_vertical: {str(config.get('natural_scrolling_vertical', False)).lower()},"
         f"wheel_edge_padding_left: {config.get('wheel_edge_padding_left', 20)},"
         f"wheel_edge_padding_right: {config.get('wheel_edge_padding_right', 20)}"
         "};"
@@ -158,7 +159,8 @@ def handle_js_message(
         dy = _normalize_web_delta(dy_raw)
 
         invert_x = config.get("natural_scrolling", True)
-        wheel_dir, raw_delta = WheelDir.from_web(dx, dy, invert_x=invert_x)
+        invert_y = config.get("natural_scrolling_vertical", False)
+        wheel_dir, raw_delta = WheelDir.from_web(dx, dy, invert_x=invert_x, invert_y=invert_y)
         if wheel_dir is None:
             return (False, None)
 

@@ -161,6 +161,7 @@ This file defines the **default values** for all configuration settings. Anki re
     "middle_click_sensitivity": 5,
     "smart_scroll": false,
     "natural_scrolling": true,
+    "natural_scrolling_vertical": false,
     "scroll_accumulation_threshold": 60,
     "state_change_cooldown_ms": 300,
     "clear_logs_on_startup": true,
@@ -254,6 +255,7 @@ Maps hotkey strings to action strings. Each key is a hotkey string following the
 | `wheel_edge_padding_right` | integer | `20` | 0-500 | Number of pixels from the right edge of the Anki window where normal scrolling is allowed (hotkeys are not intercepted). |
 | `smart_scroll` | boolean | `false` | - | When `true`, allows the mouse wheel to scroll long cards normally. Hotkeys only trigger when the user reaches the top or bottom of the page and scrolls again. Always off on the Overview screen. If the mouse is over the bottom bar, hotkeys trigger instantly regardless of this setting. |
 | `natural_scrolling` | boolean | `true` | - | When `true`, inverts horizontal scroll/swipe direction to match natural (reverse) scrolling used by most trackpads. Affects how `wheel_left` and `wheel_right` map to physical finger movements. |
+| `natural_scrolling_vertical` | boolean | `false` | - | When `true`, inverts vertical scroll/swipe direction to match natural (reverse) scrolling used by most trackpads. Affects how `wheel_up` and `wheel_down` map to physical finger movements. |
 
 ### Middle-Click Scroll Settings
 
@@ -402,6 +404,7 @@ Contains all non-hotkey settings organized as checkboxes and number inputs:
 | Checkbox | `wheel_only_on_bottom_bar` | bool | Wheel only on bottom bar |
 | Checkbox | `smart_scroll` | bool | Smart scroll for long cards |
 | Checkbox | `natural_scrolling` | bool | Natural scrolling (invert horizontal) |
+| Checkbox | `natural_scrolling_vertical` | bool | Natural scrolling (invert vertical) |
 | Checkbox | `right_click_global_undo` | bool | Right-click global undo |
 | Checkbox | `right_click_undo_confirmation` | bool | Right-click again for global undo |
 | Checkbox | `middle_click_scroll` | bool | Middle-click drag to scroll |
