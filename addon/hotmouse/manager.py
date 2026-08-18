@@ -1035,6 +1035,20 @@ def _is_bottom_web_target(obj: QObject) -> bool:
     return False
 
 
+def _is_event_over_bottom_web(event: QWheelEvent) -> bool:
+    bottom_web = getattr(mw, "bottomWeb", None)
+    if bottom_web is None:
+        return False
+    try:
+        pos = bottom_web.mapFromGlobal(_event_global_pos(event))
+        return (
+            0 <= pos.x() < _get_object_width(bottom_web)
+            and 0 <= pos.y() < _get_object_height(bottom_web)
+        )
+    except Exception:
+        return False
+
+
 def _event_global_pos(event: QWheelEvent) -> QPoint:
     try:
         return event.globalPosition().toPoint()
@@ -1061,15 +1075,17 @@ def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
         width = _get_object_width(obj)
         height = _get_object_height(obj)
 
+    is_bottom_target = _is_bottom_web_target(obj) or _is_event_over_bottom_web(event)
+
     left_padding = config.get("wheel_edge_padding_left", 20)
     right_padding = config.get("wheel_edge_padding_right", 20)
 
-    if left_padding > 0 and x < left_padding:
+    if left_padding > 0 and x < left_padding and not is_bottom_target:
         return False
-    if width > 0 and right_padding > 0 and x > width - right_padding:
+    if width > 0 and right_padding > 0 and x > width - right_padding and not is_bottom_target:
         return False
 
-    if config.get("wheel_ignore_scrollbar", True):
+    if config.get("wheel_ignore_scrollbar", True) and not is_bottom_target:
         if width > 0 and x > width - 30:
             return False
         if height > 0 and y > height - 30:
@@ -1078,7 +1094,7 @@ def _should_handle_native_wheel(obj: QObject, event: QWheelEvent) -> bool:
     if (
         getattr(mw, "state", None) == "review"
         and config.get("wheel_only_on_bottom_bar", False)
-        and not _is_bottom_web_target(obj)
+        and not is_bottom_target
     ):
         return False
 

@@ -135,7 +135,11 @@ def handle_js_message(
         return handled
 
     if req.get("key") == "wheel":
-        if config.get("wheel_ignore_scrollbar", True) and req.get("is_scrollbar"):
+        if (
+            config.get("wheel_ignore_scrollbar", True)
+            and req.get("is_scrollbar")
+            and not req.get("is_bottom")
+        ):
             return (False, None)
 
         if (

@@ -26,11 +26,15 @@ document.addEventListener("wheel", (ev) => {
     const isVerticalScrollbar = ev.clientX > document.documentElement.clientWidth;
     const isHorizontalScrollbar = ev.clientY > document.documentElement.clientHeight;
     const isScrollbar = isVerticalScrollbar || isHorizontalScrollbar;
-    const isBottom = window.innerHeight < 150 || !!(target && target.closest("#checker, #bottombar"));
+    const isBottom = window.innerHeight < 150 || !!(
+        target && target.closest("#checker, #bottombar, #bottom, #bottom-area, #ansbox")
+    );
     let atBoundary = false;
 
-    // Allow normal scrolling on the scrollbar area
-    if (isScrollbar) return;
+    // Allow normal scrolling on scrollbar areas, except when the bottom bar
+    // itself is the target. The bottom bar is an action surface, not a page
+    // scrollbar, and its wheel events must reach the hotkey handler.
+    if (isScrollbar && !isBottom) return;
 
     const cfg = window._hotmouse_config || {};
 
@@ -40,7 +44,7 @@ document.addEventListener("wheel", (ev) => {
     const finalRightPadding = Math.max(rightPadding, defaultRight);
     const clientWidth = document.documentElement.clientWidth;
 
-    if ((leftPadding > 0 && ev.clientX < leftPadding) || (finalRightPadding > 0 && ev.clientX > clientWidth - finalRightPadding)) {
+    if (!isBottom && ((leftPadding > 0 && ev.clientX < leftPadding) || (finalRightPadding > 0 && ev.clientX > clientWidth - finalRightPadding))) {
         return;
     }
 
@@ -231,4 +235,3 @@ document.addEventListener("wheel", (ev) => {
     pycmd("ReviewHotmouse#" + JSON.stringify(req));
 }, { passive: false });
 }
-
