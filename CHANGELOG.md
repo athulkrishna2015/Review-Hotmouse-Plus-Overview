@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.5.1 (2026-08-19)
+
+- **Rating-bar wheel handling**: Fixed wheel and trackpad actions not being recognized when the pointer is over the review rating-button bar. The rating bar is now detected separately from scrollbar areas in both native Qt and webview event paths.
+
 ## v3.5.0 (2026-08-15)
 
 - **Natural scrolling (invert vertical swipe)**: Added a new `natural_scrolling_vertical` config option. When enabled, flips the up/down swipe direction so it matches physical finger movement on trackpads with natural scrolling for the vertical axis. Disabled by default.
