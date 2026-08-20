@@ -66,11 +66,14 @@ class LogsTab:
                 # To prevent scrolling jumping during live updates
                 scrollbar = self.log_display.verticalScrollBar()
                 at_bottom = scrollbar.value() == scrollbar.maximum()
+                scroll_value = scrollbar.value()
                 
                 self.log_display.setPlainText(content)
                 
                 if at_bottom:
                     scrollbar.setValue(scrollbar.maximum())
+                else:
+                    scrollbar.setValue(scroll_value)
             except Exception:
                 pass
         else:
