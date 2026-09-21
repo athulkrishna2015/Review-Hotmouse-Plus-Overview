@@ -1,5 +1,10 @@
 # Changelog
 
+## v3.5.2 (2026-09-21)
+
+- **Logs tab scroll fix**: Fixed the logs tab scroll position jumping during refresh.
+- **Documentation reorganization**: Moved `DEVELOPMENT.md` into the `doc/` folder and expanded `README.md` with a key features summary.
+
 ## v3.5.1 (2026-08-19)
 
 - **Rating-bar wheel handling**: Fixed wheel and trackpad actions not being recognized when the pointer is over the review rating-button bar. The rating bar is now detected separately from scrollbar areas in both native Qt and webview event paths.
