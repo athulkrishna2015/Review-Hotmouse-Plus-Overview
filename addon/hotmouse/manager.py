@@ -921,7 +921,14 @@ class HotmouseManager:
                 return executed
             else:
                 self._wheel_accumulator = threshold
-                return self.enabled
+                # Debounced wheel: consume only when this exact button+wheel
+                # combination is configured; otherwise let the event pass
+                # through so it scrolls natively (e.g. left press + scroll on
+                # an unmapped combination). Ported from upstream
+                # BlueGreenMagick/Review-Hotmouse (left press + scroll).
+                btns = self.get_pressed_buttons(qbtns)
+                hotkey_str = self.build_hotkey(btns, wheel=wheel_dir)
+                return self.enabled and hotkey_str in config.get("shortcuts", {})
         else:
             return self.enabled
 
@@ -1171,7 +1178,15 @@ class HotmouseEventFilter(QObject):
                 toggle_on_off()
                 return True
 
-        if event.type() == QEvent.Type.MouseButtonPress:
+        if event.type() in (
+            QEvent.Type.MouseButtonPress,
+            QEvent.Type.MouseButtonDblClick,
+        ):
+            # Qt reports the second press of a double-click as
+            # MouseButtonDblClick instead of MouseButtonPress; handle it as a
+            # click too. (Middle-button double-click already returned above
+            # as the on/off toggle.) Ported from upstream
+            # BlueGreenMagick/Review-Hotmouse.
             if isinstance(event, QMouseEvent) and self.manager.on_mouse_press(event):
                 return True
 
