@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v3.6.0 (2026-09-26)
 
 - **Unmapped debounced scroll pass-through**: A wheel event arriving inside the click debounce window is now consumed only when that exact button+wheel combination is configured; otherwise it scrolls natively (e.g. left press + scroll on unmapped combinations). Ported from upstream BlueGreenMagick/Review-Hotmouse.
 - **Double-click detected as click**: The second press of a double-click (reported by Qt as `MouseButtonDblClick`) now triggers the mapped click shortcut instead of being ignored. Ported from upstream BlueGreenMagick/Review-Hotmouse.
